@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;600;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600&display=swap');
+
+body {
+  background-color: #111;
+  color: #fff;
+  margin: auto;
+  max-width: 64em;
+  font-family: Lato, sans-serif;
+  line-height: 1.5;
+  padding: .5em 1em;
+}
+
+pre, code, tt {
+  font-family: "Source Code Pro", monospace;
+  font-size: 1em;
+}
+
+a {
+  font-weight: 600;
+  color: #3ef;
+}
+
+.code-block {
+  background-color: #222;
+  margin-bottom: 2.5em;
+}
+
+.code-block pre, .block-title {
+  background-color: #333;
+  padding: .5em;
+}
+
+.used-by {
+  font-size: .8em;
+}
+
+pre {
+  overflow-x: auto;
+}
