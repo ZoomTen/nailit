@@ -1,10 +1,5 @@
 # NailIt - a simple literate programming tool.
 
-# KNOWN BUG:  Prose blocks consisting of one line will NOT
-#             have <p></p> wrapped around it.
-# WORKAROUND: Add ".. raw:: html" in its own line before the prose
-#             block's content
-
 # LIMITATION: Each code block surrounded by ``` MUST have a name.
 #             Will crash when regular nameless code blocks are used.
 
@@ -79,7 +74,7 @@ proc getBlocks (f: File): seq[Block] =
       flushed = true
     elif line.strip() == "```": # the line after this must be a prose block
       totalBlocks.addBlock Code, contentBuffer, nameBuffer # commit the previous block
-      contentBuffer = ""
+      contentBuffer = ".. raw:: html\n" # hack
       flushed = true
     else:
       flushed = false

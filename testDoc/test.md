@@ -23,14 +23,12 @@ void print_hex(uint8_t *address, size_t how_many) {
     printf("\n");
 }
 ```
-.. raw:: html
 
 Just so I'm sure of where it is, I'll have the pointer itself printed…
 
 ``` Print the pointer's address
 printf("%p -> ", address);
 ```
-.. raw:: html
 
 And then, the actual contents.
 
@@ -39,7 +37,6 @@ for (size_t i = 0; i < how_many; i++) {
     printf("%02x ", address[i]);
 }
 ```
-.. raw:: html
 
 I can then let Nim know about this function like so:
 
@@ -72,7 +69,6 @@ let
 @{Print out the sequence container}
 @{Print out bytes around the first element}
 ```
-.. raw:: html
 
 I can set any amount of arbitrary bytes to look at. I dunno, I felt like peeking at 64 bytes:
 
@@ -82,7 +78,6 @@ printHex(
     64
 )
 ```
-.. raw:: html
 
 Here I'm doing heretical things, but it's for ✨science✨ I promise.
 
@@ -94,7 +89,6 @@ printHex(
     64
 )
 ```
-.. raw:: html
 
 I think I'll just do the same things for the string.
 
@@ -126,7 +120,6 @@ Alright, let's see what we have here. First let's test the defaults.
 ``` Compile command, defaults
 nim r test
 ```
-.. raw:: html
 
 Note the default settings as of writing.
 
@@ -169,6 +162,5 @@ type
     len: int
     p: ptr NimSeqPayload[T]
 ```
-.. raw:: html
 
 It looks like the first address is a **NimSeqV2** and the second address is near the **NimSeqPayload**! Sure enough, the first element is 10 bytes in and is the beginning of the actual data (since I did subtract the pointer by 10 bytes)
