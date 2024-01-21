@@ -6,6 +6,8 @@ The tool converts from a Markdown file into HTML, fit for reading online or prin
 
 The tool supports converting only one Markdown file at the moment, if you want to use multiple files you'll have to combine them somehow… `cat *.md > onesource.md`?
 
+Also, the tool does not at the moment support appending or changing code blocks "dynamically", so you have to uh… *nail it* I guess. It may be better that way, anyway.
+
 ## Building
 
 Requires [Nim](https://nim-lang.org/) 2.x. The standard distribution should include the `nimble` tool, use `nimble build` to make a binary.
