@@ -8,7 +8,7 @@
       <link rel="stylesheet" href="css/print.css" media="print">
     </head>
     <body>
-    <strong>Example document</strong>.<ul class="simple"><li>Extract source code by using <tt class="docutils literal"><span class="pre">nailit tangle test.md testBin</span></tt>.</li>
+    <strong>Example document</strong>.<ul class="simple"><li>Extract source code by using <tt class="docutils literal"><span class="pre">nailit tangle test.md testCode</span></tt>.</li>
 <li>Produce a readable HTML file by using <tt class="docutils literal"><span class="pre">nailit weave test.md test.html</span></tt>.</li>
 </ul>
 
@@ -56,7 +56,8 @@ Hint: mm: orc; threads: on; opt: none
 ...</code></pre></div><div class="code-block" id="Programoutput,defaults"><a class="block-title" href="#Programoutput,defaults">Program output, defaults</a><pre><code>0x55ca2bc7e120 -&gt; 04 00 00 00 00 00 00 00 50 70 72 c4 30 7f 00 00 1b 00 00 00 00 00 00 00 c0 a0 c7 2b ca 55 00 00 01 00 00 00 00 00 00 00 f8 10 37 4e ff 7f 00 00 08 11 37 4e ff 7f 00 00 00 00 00 00 00 00 00 00
 0x7f30c472704e -&gt; 00 00 04 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00 03 00 00 00 00 00 00 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 0x55ca2bc7e130 -&gt; 1b 00 00 00 00 00 00 00 c0 a0 c7 2b ca 55 00 00 01 00 00 00 00 00 00 00 f8 10 37 4e ff 7f 00 00 08 11 37 4e ff 7f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-0x55ca2bc7a0be -&gt; 00 00 1b 00 00 00 00 00 00 40 49 6e 73 65 72 74 20 73 6f 6d 65 74 68 69 6e 67 20 63 6f 6f 6c 20 68 65 72 65 2e 00 00 00 00 00 74 65 73 74 00 00 00 00 2f 6d 6e 74 2f 70 65 72 73 69 73 74 65 6e</code></pre></div>Alright, what's going on here? Let's try to unpack this:<ul class="simple"><li>First is the <strong>sequence container address</strong>, that's <tt class="docutils literal"><span class="pre">0x55ca2bc7e120</span></tt>.</li>
+0x55ca2bc7a0be -&gt; 00 00 1b 00 00 00 00 00 00 40 49 6e 73 65 72 74 20 73 6f 6d 65 74 68 69 6e 67 20 63 6f 6f 6c 20 68 65 72 65 2e 00 00 00 00 00 74 65 73 74 00 00 00 00 2f 6d 6e 74 2f 70 65 72 73 69 73 74 65 6e</code></pre></div><p>Alright, what's going on here? Let's try to unpack this:</p>
+<ul class="simple"><li>First is the <strong>sequence container address</strong>, that's <tt class="docutils literal"><span class="pre">0x55ca2bc7e120</span></tt>.</li>
 <li>Second is the address <strong>near the first element</strong>, that's <tt class="docutils literal"><span class="pre">0x7f30c472704e</span></tt>.</li>
 <li>Third is the <strong>string container address</strong>, that's <tt class="docutils literal"><span class="pre">0x55ca2bc7e130</span></tt>.</li>
 <li>Fourth is the address <strong>near the first string character</strong>, that's <tt class="docutils literal"><span class="pre">0x55ca2bc7a0be</span></tt>.</li>
