@@ -240,6 +240,28 @@ proc intoHtmlTemplate(weaved: string, temp: string = "", title: string = ""): st
     # The spellings need to exact.
     return temp.replace("<!-- TITLE -->", title).replace("<!-- BODY -->", weaved)
 
+proc displayBlocks(blocks: seq[Block]) =
+  var num = 1
+  for b in blocks:
+    echo "----------"
+    echo "Block ",
+      (
+        case b.kind
+        of Prose: "P."
+        of Code: "C."
+      ),
+      $num,
+      " -> ",
+      (
+        case b.kind
+        of Prose: ""
+        of Code: " \"" & b.name & "\" "
+      )
+    num += 1
+    echo "::::::::::"
+    echo b.content
+    echo "----------\n"
+
 when isMainModule:
   let args = """
   NailIt - a simple literate programming tool.
@@ -247,6 +269,7 @@ when isMainModule:
   Usage:
     nailit weave [--template=<template.html>] <source.md> [<out.html>]
     nailit tangle <source.md> <destdir/>
+    nailit blocks <source.md>
     nailit (-h | --help)
     nailit --version
   
@@ -255,6 +278,8 @@ when isMainModule:
   
   tangle = generate compileable source code from
            literate programs.
+
+  blocks = see what blocks NailIt sees.
   """.docopt(
     version = "NailIt 0.1"
   )
@@ -282,3 +307,6 @@ when isMainModule:
   if args["tangle"].to_bool():
     blocks.tangle(($args["<destdir/>"]).Path())
     quit(0)
+
+  if args["blocks"].to_bool():
+    blocks.displayBlocks()
