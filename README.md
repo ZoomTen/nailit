@@ -6,7 +6,7 @@ The tool converts from a Markdown file into HTML, fit for reading online or prin
 
 The tool supports converting only one Markdown file at the moment, if you want to use multiple files you'll have to combine them somehow… `cat *.md > onesource.md`?
 
-Also, the tool does not at the moment support appending or changing code blocks "dynamically", so you have to uh… *nail it* I guess. It may be better that way, anyway.
+Also, the tool does not at the moment support appending or changing code blocks "dynamically", so you have to uh… *nail it* I guess. It may be better that way, anyway—at least, in a "documentation" instead of "tutorial" setting.
 
 ## Building
 
@@ -34,6 +34,10 @@ tangle = generate compileable source code from
 ## Structure
 
 Documents are made up of **code blocks** and **prose blocks**.
+
+**Code blocks** are, well, the actual program source code.
+
+**Prose blocks** are paragraphs and other stuff *around* the code blocks that explain what it does and why it does. It's richer than just commenting code.
 
 To make a code block, surround code with a single line of \`\`\` before and after, with the preceding \`\`\` line containing the title as so: **\`\`\` Title of code block.**
 
