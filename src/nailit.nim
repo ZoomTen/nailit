@@ -41,13 +41,12 @@ proc addBlock(
           contentStripped = contentBuf
 
         if contentStripped[0] == '\n':
-          contentStripped = contentStripped[1..^1]
+          contentStripped = contentStripped[1 ..^ 1]
         if contentStripped[^1] == '\n':
-          contentStripped = contentStripped[0..^2]
+          contentStripped = contentStripped[0 ..^ 2]
 
         contentStripped
-      ) # return value
-      ,
+      ), # return value
     )
 
 ## Parse blocks from a file.
@@ -116,19 +115,19 @@ proc weave(blocks: seq[Block]): string =
 
   # the header should be a link to itself so it can be linked somewhere else
   proc nameAsLink(m: RegexMatch2, s: string): string =
-    return "<a href=\"#" & s[m.group(1)].nimIdentBackticksNormalize() & "\">" &
-        s[m.group(0)] & "</a>"
+    return
+      "<a href=\"#" & s[m.group(1)].nimIdentBackticksNormalize() & "\">" & s[m.group(0)] &
+      "</a>"
 
   # turn each block to stuff
   for txblock in blocks:
     case txblock.kind
     of Code:
       # TODO: make it convert properly...
-      let
-        escapedCode =
-          txblock.content.replace("<", "&lt;").replace(">", "&gt;").replace(
-            re2"(@\{(.+)\})", nameAsLink
-          )
+      let escapedCode = txblock.content
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace(re2"(@\{(.+)\})", nameAsLink)
       let normName = txblock.name.nimIdentBackticksNormalize()
 
       # start writing converted code block
@@ -156,7 +155,7 @@ proc weave(blocks: seq[Block]): string =
         txblock.content.rstToHtml(
           {
             roSupportMarkdown, roPreferMarkdown, roSandboxDisabled,
-            roSupportRawDirective
+            roSupportRawDirective,
           },
           modeStyleInsensitive.newStringTable(),
         )
@@ -204,33 +203,34 @@ proc tangle(blocks: seq[Block], dest: Path) =
     var count = 0
     for _ in codeBlk.findAll(re2"(\s+?)@\{(.+?)\}"):
       count += 1
-    for _ in 0..count: # :(
+    for _ in 0 .. count: # :(
       codeBlk = codeBlk.replace(re2"(\s+?)@\{(.+?)\}", replaceReferencesWithContent)
 
   for key in codeBlkMap.keys:
     if key[0] == '/':
-      let outFileName = dest / Path(key[1..^1])
+      let outFileName = dest / Path(key[1 ..^ 1])
       outFileName.parentDir.string.createDir()
       outFileName.string.open(fmWrite).write(codeBlkMap[key])
 
 proc intoHtmlTemplate(weaved: string, temp: string = "", title: string = ""): string =
   if temp.strip() == "":
-    return """
+    return
+      """
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
       <title>""" &
-        title &
-        """</title>
+      title &
+      """</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="stylesheet" href="css/screen.css" media="screen,projection,tv">
       <link rel="stylesheet" href="css/print.css" media="print">
     </head>
     <body>
     """ &
-        weaved &
-        """
+      weaved &
+      """
     </body>
     </html>
     """
@@ -241,9 +241,7 @@ proc intoHtmlTemplate(weaved: string, temp: string = "", title: string = ""): st
     return temp.replace("<!-- TITLE -->", title).replace("<!-- BODY -->", weaved)
 
 when isMainModule:
-  let
-    args =
-      """
+  let args = """
   NailIt - a simple literate programming tool.
 
   Usage:
@@ -258,30 +256,29 @@ when isMainModule:
   tangle = generate compileable source code from
            literate programs.
   """.docopt(
-        version = "NailIt 0.1"
-      )
+    version = "NailIt 0.1"
+  )
 
   let blocks = open($args["<source.md>"]).getBlocks()
 
   if args["weave"].to_bool():
     # run weave
-    let
-      weaved =
-        blocks.weave().intoHtmlTemplate(
-          temp = (
-            if args["--template"].kind == vkNone:
-              ""
-            else:
-              open($args["--template"]).readAll()
-          ),
-          title = $args["<source.md>"] # TODO
-          ,
-        )
+    let weaved = blocks.weave().intoHtmlTemplate(
+        temp = (
+          if args["--template"].kind == vkNone:
+            ""
+          else:
+            open($args["--template"]).readAll()
+        ),
+        title = $args["<source.md>"], # TODO
+      )
 
     if args["<out.html>"].kind == vkNone:
       echo weaved
     else:
       open($args["<out.html>"], fmWrite).write(weaved)
-  else:
-    # run tangle
+    quit(0)
+
+  if args["tangle"].to_bool():
     blocks.tangle(($args["<destdir/>"]).Path())
+    quit(0)
