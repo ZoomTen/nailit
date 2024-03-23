@@ -21,16 +21,30 @@ a {
   color: #3ef;
 }
 
-.code-block {
+.code-block pre, span.pre {
   background-color: #222;
-  margin-bottom: 2.5em;
 }
 
-.code-block pre, .block-title {
-  background-color: #333;
-  padding: .5em;
+.code-block pre {
+  padding: 1em 1em;
+  margin: 0;
 }
 
+.code-block header {
+  background-color: #222;
+  display: inline-block;
+  padding: .2em .8em;
+}
+
+.code-block footer {
+  margin-bottom: 2em;
+}
+
+.code-block {
+  margin: 1em 0;
+}
+
+ 
 .used-by {
   font-size: .8em;
 }

@@ -89,8 +89,6 @@ proc getBlocks(f: File): seq[Block] =
 proc weave(blocks: seq[Block]): string =
   var reflist: Table[string, CountTable[string]]
   var generatedHtml = ""
-
-  # count code blocks
   for txblock in blocks:
     case txblock.kind
     of Code:
@@ -115,14 +113,14 @@ proc weave(blocks: seq[Block]): string =
     of Prose:
       discard
 
-
-  # generate HTML file
-
-  # the header should be a link to itself so it can be linked somewhere else
   proc nameAsLink(m: RegexMatch2, s: string): string =
     return
-      "<a href=\"#" & s[m.group(1)].nimIdentBackticksNormalize() & "\">" & s[m.group(0)] &
+      "<a href=\"#" &
+        s[m.group(1)].nimIdentBackticksNormalize() &
+      "\">" &
+        s[m.group(0)] &
       "</a>"
+
 
   # turn each block to stuff
   for txblock in blocks:
@@ -144,18 +142,18 @@ proc weave(blocks: seq[Block]): string =
         (
           if txblock.name.len > 0:
             "<div class=\"code-block\" id=\"" & normName & "\">" &
-            "<header class=\"block-title\">" &
-              "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
-            "</header>" &
-            "<pre><code>" &
-            escapedCode &
-            "</code></pre>"
+              "<header class=\"block-title\">" &
+                "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
+              "</header>" &
+              "<pre><code>" &
+                escapedCode &
+              "</code></pre>"
       
           else:
             "<div class=\"code-block\">" &
-            "<pre><code>" &
-            escapedCode &
-            "</code></pre>"
+              "<pre><code>" &
+                escapedCode &
+              "</code></pre>"
       
         )
       

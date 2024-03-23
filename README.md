@@ -302,17 +302,9 @@ proc weave(blocks: seq[Block]): string =
   var reflist: Table[string, CountTable[string]]
   var generatedHtml = ""
 
-  # count code blocks
   @{initialize code block references list}
   @{count code block references}
-
-  # generate HTML file
-
-  # the header should be a link to itself so it can be linked somewhere else
-  proc nameAsLink(m: RegexMatch2, s: string): string =
-    return
-      "<a href=\"#" & s[m.group(1)].nimIdentBackticksNormalize() & "\">" & s[m.group(0)] &
-      "</a>"
+  @{helper function to transform names to links}
 
   # turn each block to stuff
   for txblock in blocks:
@@ -323,6 +315,18 @@ proc weave(blocks: seq[Block]): string =
       @{convert a prose block into html}
   return generatedHtml
 
+```
+
+The header should be a link to itself so it can be linked somewhere else
+
+``` helper function to transform names to links
+proc nameAsLink(m: RegexMatch2, s: string): string =
+  return
+    "<a href=\"#" &
+      s[m.group(1)].nimIdentBackticksNormalize() &
+    "\">" &
+      s[m.group(0)] &
+    "</a>"
 ```
 
 A code block is usually referenced by other code blocks, so for every named code block we need to track how many times they're referenced or invoked in other code blocks.
@@ -394,19 +398,19 @@ txblock.content
 
 ``` starting html for named code block
 "<div class=\"code-block\" id=\"" & normName & "\">" &
-"<header class=\"block-title\">" &
-  "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
-"</header>" &
-"<pre><code>" &
-escapedCode &
-"</code></pre>"
+  "<header class=\"block-title\">" &
+    "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
+  "</header>" &
+  "<pre><code>" &
+    escapedCode &
+  "</code></pre>"
 ```
 
 ``` starting html for anonymous code block
 "<div class=\"code-block\">" &
-"<pre><code>" &
-escapedCode &
-"</code></pre>"
+  "<pre><code>" &
+    escapedCode &
+  "</code></pre>"
 ```
 
 ``` code block html end
