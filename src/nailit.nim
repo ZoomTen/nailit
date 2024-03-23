@@ -133,19 +133,19 @@ proc weave(blocks: seq[Block]): string =
       # start writing converted code block
       generatedHtml &=
         "<div class=\"code-block\" id=\"" & normName &
-        "\"><a class=\"block-title\" href=\"#" & normName & "\">" & txblock.name &
-        "</a><pre><code>" & escapedCode & "</code></pre>"
+        "\"><header class=\"block-title\"><a href=\"#" & normName & "\">" & txblock.name &
+        "</a></header><pre><code>" & escapedCode & "</code></pre>"
 
       # if the block is used somewhere else, say so
       if reflist[txblock.name].len > 0:
-        generatedHtml &= "<span class=\"used-by\">Used by "
+        generatedHtml &= "<footer class=\"used-by\">Used by "
         for i in reflist[txblock.name].keys:
           let normI = i.nimIdentBackticksNormalize()
           generatedHtml &=
             "<a href=\"#" & normI & "\">" & i &
             # " &times; " & $(reflist[txblock.name][i]) &
             "</a> "
-        generatedHtml &= "</span>"
+        generatedHtml &= "</footer>"
 
       # end write block
       generatedHtml &= "</div>"
