@@ -105,6 +105,9 @@ proc weave(blocks: seq[Block]): string =
       for m in txblock.content.findAll(codeBlockRefPtn):
         let keyName = txblock.content[m.captures[1]]
   
+        # skip empty names
+        if keyName.len < 1: continue
+  
         if reflist.hasKey keyName:
           reflist[keyName].inc txblock.name
         else:
@@ -128,6 +131,7 @@ proc weave(blocks: seq[Block]): string =
       # TODO: make it convert properly...
       let escapedCode =
         txblock.content
+          .replace("&", "&amp;")
           .replace("<", "&lt;")
           .replace(">", "&gt;")
           .replace(codeBlockRefPtn, nameAsLink)
@@ -137,17 +141,27 @@ proc weave(blocks: seq[Block]): string =
       
       # start writing converted code block
       generatedHtml &=
-        "<div class=\"code-block\" id=\"" & normName & "\">" &
-        "<header class=\"block-title\">" &
-          "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
-        "</header>" &
-        "<pre><code>" &
-          escapedCode &
-        "</code></pre>"
+        (
+          if txblock.name.len > 0:
+            "<div class=\"code-block\" id=\"" & normName & "\">" &
+            "<header class=\"block-title\">" &
+              "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
+            "</header>" &
+            "<pre><code>" &
+            escapedCode &
+            "</code></pre>"
+      
+          else:
+            "<div class=\"code-block\">" &
+            "<pre><code>" &
+            escapedCode &
+            "</code></pre>"
+      
+        )
       
       
       # if the block is used somewhere else, say so
-      if reflist[txblock.name].len > 0:
+      if txblock.name.len > 0 and reflist[txblock.name].len > 0:
         generatedHtml &= "<footer class=\"used-by\">Used by "
         
         for i in reflist[txblock.name].keys:
@@ -209,6 +223,7 @@ proc tangle(blocks: seq[Block], dest: Path) =
   for txblock in blocks:
     case txblock.kind
     of Code:
+      if txblock.name.len < 1: continue
       if codeBlkMap.hasKey txblock.name:
         stderr.writeLine "WARNING: replacing code block " & txblock.name
       codeBlkMap[txblock.name] = txblock.content
@@ -221,7 +236,7 @@ proc tangle(blocks: seq[Block], dest: Path) =
 
 
   for key in codeBlkMap.keys:
-    if key[0] == '/':
+    if key.len > 0 and key[0] == '/':
       let outFileName = dest / Path(key[1 ..^ 1])
       outFileName.parentDir.string.createDir()
       outFileName.string.open(fmWrite).write(codeBlkMap[key])
@@ -292,7 +307,7 @@ when is_main_module:
 
   """.docopt(
     version = "NailIt 0.1.1"
-  )
+    )
   let blocks =
     open($args["<source.md>"]).getBlocks()
 
