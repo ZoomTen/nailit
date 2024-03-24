@@ -13,7 +13,7 @@
 <p>The tool supports converting only one Markdown file at the moment, if you want to use multiple files you'll have to combine them somehow… <tt class="docutils literal"><span class="pre">cat *.md &gt; onesource.md</span></tt>?</p>
 <p>Also, the tool does not at the moment support appending or changing code blocks &quot;dynamically&quot;, so you have to uh… <em>nail it</em> I guess. It may be better that way, anyway—at least, in a &quot;documentation&quot; instead of &quot;tutorial&quot; setting.</p>
 
-<h2 id="building">Building</h2><p>Requires <a class="reference external" href="https://nim-lang.org/">Nim</a> 2.x. The standard distribution should include the <tt class="docutils literal"><span class="pre">nimble</span></tt> tool, use <tt class="docutils literal"><span class="pre">nimble build</span></tt> to make a binary.</p>
+<h2 id="building">Building</h2><p>Requires <a class="reference external" href="https://nim-lang.org/">Nim</a> ≥1.6.x. The standard distribution should include the <tt class="docutils literal"><span class="pre">nimble</span></tt> tool, use <tt class="docutils literal"><span class="pre">nimble build</span></tt> to make a binary.</p>
 
 <h2 id="usage">Usage</h2><div class="code-block" id="commandlinearguments"><header class="block-title"><a href="#commandlinearguments">command line arguments</a></header><pre><code>NailIt - a simple literate programming tool.
 
@@ -47,26 +47,7 @@ blocks = see what blocks NailIt sees.</code></pre><footer class="used-by">Used b
 <h2 id="source-code">Source code</h2><p>Self-hosting sounds cool, so this README also contains NailIt's entire source code! It also serves as a practical explanation on what makes a literate program.</p>
 <p>To make the compileable source code, do:</p><div class="code-block"><pre><code>nailit tangle README.md .</code></pre></div><p>To generate the literate program document, do:</p><div class="code-block"><pre><code>nailit weave README.md &gt; index.html</code></pre></div><p>This explanation of the program is still a work-in-progress.</p>
 
-<h3 id="overall-program-structure">Overall program structure</h3><div class="code-block" id="/src/nailit.nim"><header class="block-title"><a href="#/src/nailit.nim">/src/nailit.nim</a></header><pre><code><a href="#imports">@{imports}</a>
-<a href="#types">@{types}</a>
-<a href="#constants">@{constants}</a>
-<a href="#functions">@{functions}</a>
-
-when is_main_module:
-  <a href="#mainprogram">@{main program}</a></code></pre></div><div class="code-block" id="imports"><header class="block-title"><a href="#imports">imports</a></header><pre><code>import regex
-import std/[strutils, tables, strtabs, paths, os]
-import packages/docutils/[rst, rstgen, dochelpers]
-import docopt</code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block" id="types"><header class="block-title"><a href="#types">types</a></header><pre><code>type
-  <a href="#blocktypedefinition">@{block type definition}</a></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block" id="constants"><header class="block-title"><a href="#constants">constants</a></header><pre><code>const
-  <a href="#regexpatterns">@{regex patterns}</a></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block" id="functions"><header class="block-title"><a href="#functions">functions</a></header><pre><code><a href="#getblocksfromsourcefunction">@{get blocks from source function}</a>
-
-<a href="#weavefunction">@{weave function}</a>
-
-<a href="#tanglefunction">@{tangle function}</a>
-
-<a href="#insertweavedintohtmltemplate">@{insert weaved into html template}</a>
-
-<a href="#blocksfunction">@{blocks function}</a></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><h3 id="main-program">Main program</h3><p>The really nice <tt class="docutils literal"><span class="pre">docopt</span></tt> library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync <em>and</em> self-documenting.</p><div class="code-block" id="mainprogram"><header class="block-title"><a href="#mainprogram">main program</a></header><pre><code>let args = """
+<h3 id="main-program">Main program</h3><p>The really nice <tt class="docutils literal"><span class="pre">docopt</span></tt> library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync <em>and</em> self-documenting.</p><div class="code-block" id="mainprogram"><header class="block-title"><a href="#mainprogram">main program</a></header><pre><code>let args = """
 <a href="#commandlinearguments">@{command line arguments}</a>
 """.docopt(
   version = "NailIt 0.1.1"
@@ -80,23 +61,10 @@ if args["tangle"].to_bool():
   <a href="#calltanglecommand">@{call tangle command}</a>
 
 if args["blocks"].to_bool():
-  <a href="#callblockscommand">@{call blocks command}</a></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block" id="readblocksfromsourcefile"><header class="block-title"><a href="#readblocksfromsourcefile">read blocks from source file</a></header><pre><code>let blocks =
-  open($args["&lt;source.md&gt;"]).getBlocks()</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><p>The <tt class="docutils literal"><span class="pre">weave</span></tt> command supports supplying a template file via the option <tt class="docutils literal"><span class="pre">--template</span></tt>.</p><div class="code-block" id="callweavecommand"><header class="block-title"><a href="#callweavecommand">call weave command</a></header><pre><code>let weaved = blocks.weave().intoHtmlTemplate(
-  temp = (
-    if args["--template"].kind == vkNone:
-      ""
-    else:
-      open($args["--template"]).readAll()
-  ),
-  title = $args["&lt;source.md&gt;"], # TODO
-)
+  <a href="#callblockscommand">@{call blocks command}</a></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><p>The <tt class="docutils literal"><span class="pre">getBlocks</span></tt> function takes in a string, so we use the stdlib to read a markdown document as a string to then pass into the function. Note here that in Nim, <tt class="docutils literal"><span class="pre">a.getBlocks() == getBlocks(a)</span></tt>.</p><div class="code-block" id="readblocksfromsourcefile"><header class="block-title"><a href="#readblocksfromsourcefile">read blocks from source file</a></header><pre><code>let blocks =
+  open($args["&lt;source.md&gt;"]).getBlocks()</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><p>The functions to call the features of NailIt will be described in the appropriate sections.</p>
 
-if args["&lt;out.html&gt;"].kind == vkNone:
-  echo weaved
-else:
-  open($args["&lt;out.html&gt;"], fmWrite).write(weaved)
-quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><div class="code-block" id="calltanglecommand"><header class="block-title"><a href="#calltanglecommand">call tangle command</a></header><pre><code>blocks.tangle(($args["&lt;destdir/&gt;"]).Path())
-quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><div class="code-block" id="callblockscommand"><header class="block-title"><a href="#callblockscommand">call blocks command</a></header><pre><code>blocks.displayBlocks()</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h3 id="blocks">Blocks</h3><div class="code-block" id="blocktypedefinition"><header class="block-title"><a href="#blocktypedefinition">block type definition</a></header><pre><code>BlockType = enum
+<h3 id="blocks">Blocks</h3><p>Blocks are just text with attributes that a</p><div class="code-block" id="blocktypedefinition"><header class="block-title"><a href="#blocktypedefinition">block type definition</a></header><pre><code>BlockType = enum
   Prose
   Code
 
@@ -106,7 +74,7 @@ Block = object
   of Code:
     name: string
   else:
-    discard</code></pre><footer class="used-by">Used by <a href="#types">types</a> </footer></div><h3 id="parsing-blocks-from-the-document">Parsing blocks from the document</h3><div class="code-block" id="getblocksfromsourcefunction"><header class="block-title"><a href="#getblocksfromsourcefunction">get blocks from source function</a></header><pre><code>proc getBlocks(f: File): seq[Block] =
+    discard</code></pre><footer class="used-by">Used by <a href="#types">types</a> </footer></div><h4 id="parsing-blocks-from-the-document">Parsing blocks from the document</h4><p>Basically, parsing is done on a line-by-line basis.</p><div class="code-block" id="getblocksfromsourcefunction"><header class="block-title"><a href="#getblocksfromsourcefunction">get blocks from source function</a></header><pre><code>proc getBlocks(f: File): seq[Block] =
   <a href="#helperfunctiontoaddablock">@{helper function to add a block}</a>
 
   var
@@ -118,10 +86,17 @@ Block = object
     nextNameBuffer = ""
 
   for line in lines(f):
-    <a href="#parseeachlineandmakenewblocks">@{parse each line and make new blocks}</a>
+    <a href="#parsealineandmakenewblocks">@{parse a line and make new blocks}</a>
 
-  return totalBlocks</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><p>The two types of blocks in the markdown document live separately and cannot be nested, i.e. no code blocks in prose blocks, vice versa. The document is parsed using a switch that asks &quot;is the current block a code block?&quot;, which is toggled by hitting a line starting with a <tt class="docutils literal"><span class="pre">```</span></tt>.</p>
-<p>When a <tt class="docutils literal"><span class="pre">```</span></tt> is encountered at the start of the document, it means this first block is a code block. Which means, this part of the code will insert an empty prose block before it, which shouldn't really matter for export purposes.</p><div class="code-block" id="parseeachlineandmakenewblocks"><header class="block-title"><a href="#parseeachlineandmakenewblocks">parse each line and make new blocks</a></header><pre><code>if (var m: RegexMatch2; line.match(codeBlockPtn, m)):
+  return totalBlocks</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><p>While parsing, the program looks for these specific patterns:</p>
+<ul class="simple"><li><tt class="docutils literal"><span class="pre">codeBlockPtn</span></tt> scans for code block <em>definitions</em>, like <tt class="docutils literal"><span class="pre">```</span></tt> or <tt class="docutils literal"><span class="pre">``` named block</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">codeBlockRefPtn</span></tt> scans for code block <em>references</em>, like <tt class="docutils literal"><span class="pre">@{named block}</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">codeBlockRefSpacesPtn</span></tt> is like <tt class="docutils literal"><span class="pre">codeBlockRefPtn</span></tt>, except it grabs whatever leading spaces are in it as well.</li>
+</ul><div class="code-block" id="regexpatterns"><header class="block-title"><a href="#regexpatterns">regex patterns</a></header><pre><code>codeBlockPtn = re2"^```(\s*(.+))?"
+codeBlockRefPtn = re2"(@\{(.+)\})"
+codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"</code></pre><footer class="used-by">Used by <a href="#constants">constants</a> </footer></div><p>The two types of blocks in the markdown document live separately and cannot be nested, i.e. no code blocks in prose blocks, vice versa. The document is parsed using a switch that asks &quot;is the current block a code block?&quot;, which is toggled by hitting a line starting with a <tt class="docutils literal"><span class="pre">```</span></tt>.</p>
+<p>When a <tt class="docutils literal"><span class="pre">```</span></tt> is encountered at the start of the document, it means this first block is a code block. Which means, this part of the code will insert an empty prose block before it, which shouldn't really matter for export purposes.</p>
+<p>Since the code block to be added is not actually inserted until it hits an ending <tt class="docutils literal"><span class="pre">```</span></tt>, name-setting is deferred until then, just like content-setting.</p><div class="code-block" id="parsealineandmakenewblocks"><header class="block-title"><a href="#parsealineandmakenewblocks">parse a line and make new blocks</a></header><pre><code>if (var m: RegexMatch2; line.match(codeBlockPtn, m)):
   totalBlocks.addBlock(
     (if isCodeBlock: Code else: Prose),
     contentBuffer,
@@ -133,13 +108,12 @@ Block = object
   contentBuffer = ""
   isCodeBlock = not isCodeBlock
 else:
-  contentBuffer &amp;= line &amp; "\n"</code></pre><footer class="used-by">Used by <a href="#getblocksfromsourcefunction">get blocks from source function</a> </footer></div><p>Names for code blocks are optional. The regex library will have its ranges set below 0 if it can't find a name, so I'm taking it into account here.</p>
-<p>Since the code block to be added is not actually inserted until it hits an ending <tt class="docutils literal"><span class="pre">```</span></tt>, name-setting is deferred until then.</p><div class="code-block" id="setthenameforthenextblockconditionally"><header class="block-title"><a href="#setthenameforthenextblockconditionally">set the name for the next block conditionally</a></header><pre><code>nextNameBuffer = (
+  contentBuffer &amp;= line &amp; "\n"</code></pre><footer class="used-by">Used by <a href="#getblocksfromsourcefunction">get blocks from source function</a> </footer></div><p>Names for code blocks are optional. The regex library will have its ranges set below 0 if it can't find a name, so I'm taking it into account here.</p><div class="code-block" id="setthenameforthenextblockconditionally"><header class="block-title"><a href="#setthenameforthenextblockconditionally">set the name for the next block conditionally</a></header><pre><code>nextNameBuffer = (
   if (m.group(1).a &gt; -1) and (m.group(1).b &gt; -1):
     line[m.group(1)]
   else:
     ""
-)</code></pre><footer class="used-by">Used by <a href="#parseeachlineandmakenewblocks">parse each line and make new blocks</a> </footer></div><p>A local helper function is defined here to handle things like spaces before and after the content, as well as potentially other headaches.</p><div class="code-block" id="helperfunctiontoaddablock"><header class="block-title"><a href="#helperfunctiontoaddablock">helper function to add a block</a></header><pre><code>proc addBlock(
+  )</code></pre><footer class="used-by">Used by <a href="#parsealineandmakenewblocks">parse a line and make new blocks</a> </footer></div><p>Block-adding is done by a helper function <tt class="docutils literal"><span class="pre">addBlock</span></tt>. This is to handle things like spaces before and after the content, as well as potentially other headaches.</p><div class="code-block" id="helperfunctiontoaddablock"><header class="block-title"><a href="#helperfunctiontoaddablock">helper function to add a block</a></header><pre><code>proc addBlock(
     blocks: var seq[Block],
     parseAs: BlockType,
     contentBuf: string,
@@ -168,12 +142,7 @@ else:
   if contentStripped[^1] == '\n':
     contentStripped = contentStripped[0 ..^ 2]
 
-contentStripped</code></pre><footer class="used-by">Used by <a href="#helperfunctiontoaddablock">helper function to add a block</a> </footer></div><h3 id="regex-patterns">Regex patterns</h3><ul class="simple"><li><tt class="docutils literal"><span class="pre">codeBlockPtn</span></tt> scans for code block <em>definitions</em>, like <tt class="docutils literal"><span class="pre">```</span></tt> or <tt class="docutils literal"><span class="pre">``` named block</span></tt>.</li>
-<li><tt class="docutils literal"><span class="pre">codeBlockRefPtn</span></tt> scans for code block <em>references</em>, like <tt class="docutils literal"><span class="pre">@{named block}</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">codeBlockRefSpacesPtn</span></tt> is like <tt class="docutils literal"><span class="pre">codeBlockRefPtn</span></tt>, except it grabs whatever leading spaces are in it as well.</li>
-</ul><div class="code-block" id="regexpatterns"><header class="block-title"><a href="#regexpatterns">regex patterns</a></header><pre><code>codeBlockPtn = re2"^```(\s*(.+))?"
-codeBlockRefPtn = re2"(@\{(.+)\})"
-codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"</code></pre><footer class="used-by">Used by <a href="#constants">constants</a> </footer></div><h3 id="weave">Weave</h3><p>The <tt class="docutils literal"><span class="pre">weave</span></tt> command compiles an HTML page from a literate program.</p><div class="code-block" id="weavefunction"><header class="block-title"><a href="#weavefunction">weave function</a></header><pre><code>proc weave(blocks: seq[Block]): string =
+contentStripped</code></pre><footer class="used-by">Used by <a href="#helperfunctiontoaddablock">helper function to add a block</a> </footer></div><h3 id="weave">Weave</h3><p>The <tt class="docutils literal"><span class="pre">weave</span></tt> command compiles an HTML page from a literate program.</p><div class="code-block" id="weavefunction"><header class="block-title"><a href="#weavefunction">weave function</a></header><pre><code>proc weave(blocks: seq[Block]): string =
   var reflist: Table[string, CountTable[string]]
   var generatedHtml = ""
 
@@ -189,10 +158,14 @@ codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"</code></pre><footer class="us
     of Prose:
       <a href="#convertaproseblockintohtml">@{convert a prose block into html}</a>
   return generatedHtml
-</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><p>The header should be a link to itself so it can be linked somewhere else</p><div class="code-block" id="helperfunctiontotransformnamestolinks"><header class="block-title"><a href="#helperfunctiontotransformnamestolinks">helper function to transform names to links</a></header><pre><code>proc nameAsLink(m: RegexMatch2, s: string): string =
+</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><p>The header should be a link to itself so it can be linked somewhere else</p><div class="code-block" id="functiontonormalizelabels"><header class="block-title"><a href="#functiontonormalizelabels">function to normalize labels</a></header><pre><code>proc normalize(s: string): string =
+  return s
+    .replace("_","")
+    .replace(" ","")
+    .tolowerascii()</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><div class="code-block" id="helperfunctiontotransformnamestolinks"><header class="block-title"><a href="#helperfunctiontotransformnamestolinks">helper function to transform names to links</a></header><pre><code>proc nameAsLink(m: RegexMatch2, s: string): string =
   return
     "&lt;a href=\"#" &amp;
-      s[m.group(1)].nimIdentBackticksNormalize() &amp;
+      s[m.group(1)].normalize() &amp;
     "\"&gt;" &amp;
       s[m.group(0)] &amp;
     "&lt;/a&gt;"</code></pre><footer class="used-by">Used by <a href="#weavefunction">weave function</a> </footer></div><p>A code block is usually referenced by other code blocks, so for every named code block we need to track how many times they're referenced or invoked in other code blocks.</p><div class="code-block" id="initializecodeblockreferenceslist"><header class="block-title"><a href="#initializecodeblockreferenceslist">initialize code block references list</a></header><pre><code>for txblock in blocks:
@@ -219,28 +192,28 @@ codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"</code></pre><footer class="us
 let escapedCode =
   <a href="#makethecodeblockhtml-friendly">@{make the code block html-friendly}</a>
 
-let normName = txblock.name.nimIdentBackticksNormalize()
+let normName = txblock.name.normalize()
 
 # start writing converted code block
-generatedHtml &amp;=
+generatedHtml &amp;= (
   <a href="#codeblockhtmlstart">@{code block html start}</a>
+)
 
 # if the block is used somewhere else, say so
 if txblock.name.len &gt; 0 and reflist[txblock.name].len &gt; 0:
   <a href="#generatebacklinkslistforhtmlcodeblock">@{generate backlinks list for html code block}</a>
 
 # end write block
-generatedHtml &amp;=
-  <a href="#codeblockhtmlend">@{code block html end}</a></code></pre><footer class="used-by">Used by <a href="#weavefunction">weave function</a> </footer></div><div class="code-block" id="makethecodeblockhtml-friendly"><header class="block-title"><a href="#makethecodeblockhtml-friendly">make the code block html-friendly</a></header><pre><code>txblock.content
+generatedHtml &amp;= (
+  <a href="#codeblockhtmlend">@{code block html end}</a>
+)</code></pre><footer class="used-by">Used by <a href="#weavefunction">weave function</a> </footer></div><div class="code-block" id="makethecodeblockhtml-friendly"><header class="block-title"><a href="#makethecodeblockhtml-friendly">make the code block html-friendly</a></header><pre><code>txblock.content
   .replace("&amp;", "&amp;amp;")
   .replace("&lt;", "&amp;lt;")
   .replace("&gt;", "&amp;gt;")
-  .replace(codeBlockRefPtn, nameAsLink)</code></pre><footer class="used-by">Used by <a href="#convertacodeblockintohtml">convert a code block into html</a> </footer></div><div class="code-block" id="codeblockhtmlstart"><header class="block-title"><a href="#codeblockhtmlstart">code block html start</a></header><pre><code>(
-  if txblock.name.len &gt; 0:
-    <a href="#startinghtmlfornamedcodeblock">@{starting html for named code block}</a>
-  else:
-    <a href="#startinghtmlforanonymouscodeblock">@{starting html for anonymous code block}</a>
-)</code></pre><footer class="used-by">Used by <a href="#convertacodeblockintohtml">convert a code block into html</a> </footer></div><div class="code-block" id="startinghtmlfornamedcodeblock"><header class="block-title"><a href="#startinghtmlfornamedcodeblock">starting html for named code block</a></header><pre><code>"&lt;div class=\"code-block\" id=\"" &amp; normName &amp; "\"&gt;" &amp;
+  .replace(codeBlockRefPtn, nameAsLink)</code></pre><footer class="used-by">Used by <a href="#convertacodeblockintohtml">convert a code block into html</a> </footer></div><div class="code-block" id="codeblockhtmlstart"><header class="block-title"><a href="#codeblockhtmlstart">code block html start</a></header><pre><code>if txblock.name.len &gt; 0:
+  <a href="#startinghtmlfornamedcodeblock">@{starting html for named code block}</a>
+else:
+  <a href="#startinghtmlforanonymouscodeblock">@{starting html for anonymous code block}</a></code></pre><footer class="used-by">Used by <a href="#convertacodeblockintohtml">convert a code block into html</a> </footer></div><div class="code-block" id="startinghtmlfornamedcodeblock"><header class="block-title"><a href="#startinghtmlfornamedcodeblock">starting html for named code block</a></header><pre><code>"&lt;div class=\"code-block\" id=\"" &amp; normName &amp; "\"&gt;" &amp;
   "&lt;header class=\"block-title\"&gt;" &amp;
     "&lt;a href=\"#" &amp; normName &amp; "\"&gt;" &amp; txblock.name &amp; "&lt;/a&gt;" &amp;
   "&lt;/header&gt;" &amp;
@@ -252,13 +225,12 @@ generatedHtml &amp;=
   "&lt;/code&gt;&lt;/pre&gt;"</code></pre><footer class="used-by">Used by <a href="#codeblockhtmlstart">code block html start</a> </footer></div><div class="code-block" id="codeblockhtmlend"><header class="block-title"><a href="#codeblockhtmlend">code block html end</a></header><pre><code>"&lt;/div&gt;"</code></pre><footer class="used-by">Used by <a href="#convertacodeblockintohtml">convert a code block into html</a> </footer></div><div class="code-block" id="generatebacklinkslistforhtmlcodeblock"><header class="block-title"><a href="#generatebacklinkslistforhtmlcodeblock">generate backlinks list for html code block</a></header><pre><code>generatedHtml &amp;= "&lt;footer class=\"used-by\"&gt;Used by "
 
 for i in reflist[txblock.name].keys:
-  let normI = i.nimIdentBackticksNormalize()
+  let normI = i.normalize()
   generatedHtml &amp;=
     "&lt;a href=\"#" &amp; normI &amp; "\"&gt;" &amp; i &amp;
     # " &amp;times; " &amp; $(reflist[txblock.name][i]) &amp;
     "&lt;/a&gt; "
-generatedHtml &amp;= "&lt;/footer&gt;"</code></pre><footer class="used-by">Used by <a href="#convertacodeblockintohtml">convert a code block into html</a> </footer></div><p>Meanwhile, prose blocks are just converted wholesale. There's a <tt class="docutils literal"><span class="pre">.. raw:: html</span></tt> line prepended to the content in order to make the first line a &lt;p&gt;, so as to make the flow consistent.</p><div class="code-block" id="convertaproseblockintohtml"><header class="block-title"><a href="#convertaproseblockintohtml">convert a prose block into html</a></header><pre><code># just convert it wholesale
-let toParaHack = ".. raw:: html\n\n" &amp; txblock.content
+generatedHtml &amp;= "&lt;/footer&gt;"</code></pre><footer class="used-by">Used by <a href="#convertacodeblockintohtml">convert a code block into html</a> </footer></div><p>Meanwhile, prose blocks are just converted wholesale. There's a <tt class="docutils literal"><span class="pre">.. raw:: html</span></tt> line prepended to the content in order to make the first line a &lt;p&gt;, so as to make the flow consistent.</p><div class="code-block" id="convertaproseblockintohtml"><header class="block-title"><a href="#convertaproseblockintohtml">convert a prose block into html</a></header><pre><code>let toParaHack = ".. raw:: html\n\n" &amp; txblock.content
 generatedHtml &amp;=
   toParaHack.rstToHtml(
     {
@@ -287,7 +259,21 @@ generatedHtml &amp;=
     # &lt;!-- TITLE --&gt; is replaced with the document title.
     # &lt;!-- BODY --&gt; is replaced with the body of the document.
     # The spellings need to exact.
-    return temp.replace("&lt;!-- TITLE --&gt;", title).replace("&lt;!-- BODY --&gt;", weaved)</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><h3 id="tangle">Tangle</h3><div class="code-block" id="tanglefunction"><header class="block-title"><a href="#tanglefunction">tangle function</a></header><pre><code>proc tangle(blocks: seq[Block], dest: Path) =
+    return temp.replace("&lt;!-- TITLE --&gt;", title).replace("&lt;!-- BODY --&gt;", weaved)</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><h4 id="calling-the-weave-command">Calling the weave command</h4><p>The <tt class="docutils literal"><span class="pre">weave</span></tt> command supports supplying a template file via the option <tt class="docutils literal"><span class="pre">--template</span></tt>. This is optional, as the command has a &quot;default&quot; template that it uses.</p><div class="code-block" id="callweavecommand"><header class="block-title"><a href="#callweavecommand">call weave command</a></header><pre><code>let weaved = blocks.weave().intoHtmlTemplate(
+  temp = (
+    if args["--template"].kind == vkNone:
+      ""
+    else:
+      open($args["--template"]).readAll()
+  ),
+  title = $args["&lt;source.md&gt;"], # TODO
+)
+
+if args["&lt;out.html&gt;"].kind == vkNone:
+  echo weaved
+else:
+  open($args["&lt;out.html&gt;"], fmWrite).write(weaved)
+quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h3 id="tangle">Tangle</h3><div class="code-block" id="tanglefunction"><header class="block-title"><a href="#tanglefunction">tangle function</a></header><pre><code>proc tangle(blocks: seq[Block], dest: string) =
   var codeBlkMap: Table[string, string]
 
   <a href="#helperfunctiontoreplacereferenceswithcontent">@{helper function to replace references with content}</a>
@@ -297,9 +283,9 @@ generatedHtml &amp;=
 
   for key in codeBlkMap.keys:
     if key.len &gt; 0 and key[0] == '/':
-      <a href="#savecodeblocktofile">@{save code block to file}</a></code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><div class="code-block" id="savecodeblocktofile"><header class="block-title"><a href="#savecodeblocktofile">save code block to file</a></header><pre><code>let outFileName = dest / Path(key[1 ..^ 1])
-outFileName.parentDir.string.createDir()
-outFileName.string.open(fmWrite).write(codeBlkMap[key])
+      <a href="#savecodeblocktofile">@{save code block to file}</a></code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><div class="code-block" id="savecodeblocktofile"><header class="block-title"><a href="#savecodeblocktofile">save code block to file</a></header><pre><code>let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
+outFileName.parentDir.createDir()
+outFileName.open(fmWrite).write(codeBlkMap[key])
 stderr.writeLine "INFO: wrote to file " &amp; outFileName.string</code></pre><footer class="used-by">Used by <a href="#tanglefunction">tangle function</a> </footer></div><div class="code-block" id="helperfunctiontoreplacereferenceswithcontent"><header class="block-title"><a href="#helperfunctiontoreplacereferenceswithcontent">helper function to replace references with content</a></header><pre><code>proc replaceReferencesWithContent(m: RegexMatch2, s: string): string =
   let keyName = s[m.group(1)]
 
@@ -334,7 +320,8 @@ stderr.writeLine "INFO: wrote to file " &amp; outFileName.string</code></pre><fo
       stderr.writeLine "WARNING: replacing code block " &amp; txblock.name
     codeBlkMap[txblock.name] = txblock.content
   of Prose:
-    discard</code></pre><footer class="used-by">Used by <a href="#tanglefunction">tangle function</a> </footer></div><h3 id="view-blocks">View Blocks</h3><div class="code-block" id="blocksfunction"><header class="block-title"><a href="#blocksfunction">blocks function</a></header><pre><code>proc displayBlocks(blocks: seq[Block]) =
+    discard</code></pre><footer class="used-by">Used by <a href="#tanglefunction">tangle function</a> </footer></div><div class="code-block" id="calltanglecommand"><header class="block-title"><a href="#calltanglecommand">call tangle command</a></header><pre><code>blocks.tangle(($args["&lt;destdir/&gt;"]))
+quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h3 id="view-blocks">View Blocks</h3><div class="code-block" id="blocksfunction"><header class="block-title"><a href="#blocksfunction">blocks function</a></header><pre><code>proc displayBlocks(blocks: seq[Block]) =
   var num = 1
   for b in blocks:
     let blockTitle =
@@ -352,6 +339,27 @@ stderr.writeLine "INFO: wrote to file " &amp; outFileName.string</code></pre><fo
     echo '-'.repeat(blockTitle.len)
     num += 1
     echo b.content
-    echo '-'.repeat(blockTitle.len) &amp; '\n'</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div>    </body>
+    echo '-'.repeat(blockTitle.len) &amp; '\n'</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><div class="code-block" id="callblockscommand"><header class="block-title"><a href="#callblockscommand">call blocks command</a></header><pre><code>blocks.displayBlocks()</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h3 id="overall-program-structure">Overall program structure</h3><div class="code-block" id="/src/nailit.nim"><header class="block-title"><a href="#/src/nailit.nim">/src/nailit.nim</a></header><pre><code><a href="#imports">@{imports}</a>
+<a href="#types">@{types}</a>
+<a href="#constants">@{constants}</a>
+<a href="#functions">@{functions}</a>
+
+when is_main_module:
+  <a href="#mainprogram">@{main program}</a></code></pre></div><div class="code-block" id="imports"><header class="block-title"><a href="#imports">imports</a></header><pre><code>import regex
+import std/[strutils, tables, strtabs, os]
+import packages/docutils/[rst, rstgen]
+import docopt</code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block" id="types"><header class="block-title"><a href="#types">types</a></header><pre><code>type
+  <a href="#blocktypedefinition">@{block type definition}</a></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block" id="constants"><header class="block-title"><a href="#constants">constants</a></header><pre><code>const
+  <a href="#regexpatterns">@{regex patterns}</a></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block" id="functions"><header class="block-title"><a href="#functions">functions</a></header><pre><code><a href="#functiontonormalizelabels">@{function to normalize labels}</a>
+
+<a href="#getblocksfromsourcefunction">@{get blocks from source function}</a>
+
+<a href="#weavefunction">@{weave function}</a>
+
+<a href="#tanglefunction">@{tangle function}</a>
+
+<a href="#insertweavedintohtmltemplate">@{insert weaved into html template}</a>
+
+<a href="#blocksfunction">@{blocks function}</a></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div>    </body>
     </html>
     

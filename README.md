@@ -10,7 +10,7 @@ Also, the tool does not at the moment support appending or changing code blocks 
 
 ## Building
 
-Requires [Nim](https://nim-lang.org/) 2.x. The standard distribution should include the `nimble` tool, use `nimble build` to make a binary.
+Requires [Nim](https://nim-lang.org/) ≥1.6.x. The standard distribution should include the `nimble` tool, use `nimble build` to make a binary.
 
 ## Usage
 
@@ -74,47 +74,6 @@ nailit weave README.md > index.html
 
 This explanation of the program is still a work-in-progress.
 
-### Overall program structure
-
-``` /src/nailit.nim
-@{imports}
-@{types}
-@{constants}
-@{functions}
-
-when is_main_module:
-  @{main program}
-```
-
-``` imports
-import regex
-import std/[strutils, tables, strtabs, paths, os]
-import packages/docutils/[rst, rstgen, dochelpers]
-import docopt
-```
-
-``` types
-type
-  @{block type definition}
-```
-
-``` constants
-const
-  @{regex patterns}
-```
-
-``` functions
-@{get blocks from source function}
-
-@{weave function}
-
-@{tangle function}
-
-@{insert weaved into html template}
-
-@{blocks function}
-```
-
 ### Main program
 
 The really nice `docopt` library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync *and* self-documenting.
@@ -137,41 +96,18 @@ if args["blocks"].to_bool():
   @{call blocks command}
 ```
 
+The `getBlocks` function takes in a string, so we use the stdlib to read a markdown document as a string to then pass into the function. Note here that in Nim, `a.getBlocks() == getBlocks(a)`.
+
 ``` read blocks from source file
 let blocks =
   open($args["<source.md>"]).getBlocks()
 ```
 
-The `weave` command supports supplying a template file via the option `--template`.
-
-``` call weave command
-let weaved = blocks.weave().intoHtmlTemplate(
-  temp = (
-    if args["--template"].kind == vkNone:
-      ""
-    else:
-      open($args["--template"]).readAll()
-  ),
-  title = $args["<source.md>"], # TODO
-)
-
-if args["<out.html>"].kind == vkNone:
-  echo weaved
-else:
-  open($args["<out.html>"], fmWrite).write(weaved)
-quit(0)
-```
-
-``` call tangle command
-blocks.tangle(($args["<destdir/>"]).Path())
-quit(0)
-```
-
-``` call blocks command
-blocks.displayBlocks()
-```
+The functions to call the features of NailIt will be described in the appropriate sections.
 
 ### Blocks
+
+Blocks are just text with attributes that a
 
 ``` block type definition
 BlockType = enum
@@ -187,7 +123,9 @@ Block = object
     discard
 ```
 
-### Parsing blocks from the document
+#### Parsing blocks from the document
+
+Basically, parsing is done on a line-by-line basis.
 
 ``` get blocks from source function
 proc getBlocks(f: File): seq[Block] =
@@ -202,16 +140,30 @@ proc getBlocks(f: File): seq[Block] =
     nextNameBuffer = ""
 
   for line in lines(f):
-    @{parse each line and make new blocks}
+    @{parse a line and make new blocks}
 
   return totalBlocks
+```
+
+While parsing, the program looks for these specific patterns:
+
+* `codeBlockPtn` scans for code block *definitions*, like `\`\`\`` or `\`\`\` named block`.
+* `codeBlockRefPtn` scans for code block *references*, like `@{named block}`
+* `codeBlockRefSpacesPtn` is like `codeBlockRefPtn`, except it grabs whatever leading spaces are in it as well.
+
+``` regex patterns
+codeBlockPtn = re2"^```(\s*(.+))?"
+codeBlockRefPtn = re2"(@\{(.+)\})"
+codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"
 ```
 
 The two types of blocks in the markdown document live separately and cannot be nested, i.e. no code blocks in prose blocks, vice versa. The document is parsed using a switch that asks "is the current block a code block?", which is toggled by hitting a line starting with a `\`\`\``.
 
 When a `\`\`\`` is encountered at the start of the document, it means this first block is a code block. Which means, this part of the code will insert an empty prose block before it, which shouldn't really matter for export purposes.
 
-``` parse each line and make new blocks
+Since the code block to be added is not actually inserted until it hits an ending `\`\`\``, name-setting is deferred until then, just like content-setting.
+
+``` parse a line and make new blocks
 if (var m: RegexMatch2; line.match(codeBlockPtn, m)):
   totalBlocks.addBlock(
     (if isCodeBlock: Code else: Prose),
@@ -229,18 +181,16 @@ else:
 
 Names for code blocks are optional. The regex library will have its ranges set below 0 if it can't find a name, so I'm taking it into account here.
 
-Since the code block to be added is not actually inserted until it hits an ending `\`\`\``, name-setting is deferred until then.
-
 ``` set the name for the next block conditionally
 nextNameBuffer = (
   if (m.group(1).a > -1) and (m.group(1).b > -1):
     line[m.group(1)]
   else:
     ""
-)
+  )
 ```
 
-A local helper function is defined here to handle things like spaces before and after the content, as well as potentially other headaches.
+Block-adding is done by a helper function `addBlock`. This is to handle things like spaces before and after the content, as well as potentially other headaches.
 
 ``` helper function to add a block
 proc addBlock(
@@ -281,18 +231,6 @@ else:
 contentStripped
 ```
 
-### Regex patterns
-
-* `codeBlockPtn` scans for code block *definitions*, like `\`\`\`` or `\`\`\` named block`.
-* `codeBlockRefPtn` scans for code block *references*, like `@{named block}`
-* `codeBlockRefSpacesPtn` is like `codeBlockRefPtn`, except it grabs whatever leading spaces are in it as well.
-
-``` regex patterns
-codeBlockPtn = re2"^```(\s*(.+))?"
-codeBlockRefPtn = re2"(@\{(.+)\})"
-codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"
-```
-
 ### Weave
 
 The `weave` command compiles an HTML page from a literate program.
@@ -319,11 +257,19 @@ proc weave(blocks: seq[Block]): string =
 
 The header should be a link to itself so it can be linked somewhere else
 
+``` function to normalize labels
+proc normalize(s: string): string =
+  return s
+    .replace("_","")
+    .replace(" ","")
+    .tolowerascii()
+```
+
 ``` helper function to transform names to links
 proc nameAsLink(m: RegexMatch2, s: string): string =
   return
     "<a href=\"#" &
-      s[m.group(1)].nimIdentBackticksNormalize() &
+      s[m.group(1)].normalize() &
     "\">" &
       s[m.group(0)] &
     "</a>"
@@ -364,19 +310,21 @@ for txblock in blocks:
 let escapedCode =
   @{make the code block html-friendly}
 
-let normName = txblock.name.nimIdentBackticksNormalize()
+let normName = txblock.name.normalize()
 
 # start writing converted code block
-generatedHtml &=
+generatedHtml &= (
   @{code block html start}
+)
 
 # if the block is used somewhere else, say so
 if txblock.name.len > 0 and reflist[txblock.name].len > 0:
   @{generate backlinks list for html code block}
 
 # end write block
-generatedHtml &=
+generatedHtml &= (
   @{code block html end}
+)
 ```
 
 ``` make the code block html-friendly
@@ -388,12 +336,10 @@ txblock.content
 ```
 
 ``` code block html start
-(
-  if txblock.name.len > 0:
-    @{starting html for named code block}
-  else:
-    @{starting html for anonymous code block}
-)
+if txblock.name.len > 0:
+  @{starting html for named code block}
+else:
+  @{starting html for anonymous code block}
 ```
 
 ``` starting html for named code block
@@ -421,7 +367,7 @@ txblock.content
 generatedHtml &= "<footer class=\"used-by\">Used by "
 
 for i in reflist[txblock.name].keys:
-  let normI = i.nimIdentBackticksNormalize()
+  let normI = i.normalize()
   generatedHtml &=
     "<a href=\"#" & normI & "\">" & i &
     # " &times; " & $(reflist[txblock.name][i]) &
@@ -432,7 +378,6 @@ generatedHtml &= "</footer>"
 Meanwhile, prose blocks are just converted wholesale. There's a `.. raw:: html` line prepended to the content in order to make the first line a <p>, so as to make the flow consistent.
 
 ``` convert a prose block into html
-# just convert it wholesale
 let toParaHack = ".. raw:: html\n\n" & txblock.content
 generatedHtml &=
   toParaHack.rstToHtml(
@@ -469,12 +414,33 @@ proc intoHtmlTemplate(weaved: string, temp: string = "", title: string = ""): st
     return temp.replace("<!-- TITLE -->", title).replace("<!-- BODY -->", weaved)
 ```
 
+#### Calling the weave command
+
+The `weave` command supports supplying a template file via the option `--template`. This is optional, as the command has a "default" template that it uses.
+
+``` call weave command
+let weaved = blocks.weave().intoHtmlTemplate(
+  temp = (
+    if args["--template"].kind == vkNone:
+      ""
+    else:
+      open($args["--template"]).readAll()
+  ),
+  title = $args["<source.md>"], # TODO
+)
+
+if args["<out.html>"].kind == vkNone:
+  echo weaved
+else:
+  open($args["<out.html>"], fmWrite).write(weaved)
+quit(0)
+```
 
 
 ### Tangle
 
 ``` tangle function
-proc tangle(blocks: seq[Block], dest: Path) =
+proc tangle(blocks: seq[Block], dest: string) =
   var codeBlkMap: Table[string, string]
 
   @{helper function to replace references with content}
@@ -488,9 +454,9 @@ proc tangle(blocks: seq[Block], dest: Path) =
 ```
 
 ``` save code block to file
-let outFileName = dest / Path(key[1 ..^ 1])
-outFileName.parentDir.string.createDir()
-outFileName.string.open(fmWrite).write(codeBlkMap[key])
+let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
+outFileName.parentDir.createDir()
+outFileName.open(fmWrite).write(codeBlkMap[key])
 stderr.writeLine "INFO: wrote to file " & outFileName.string
 ```
 
@@ -540,6 +506,11 @@ for txblock in blocks:
     discard
 ```
 
+``` call tangle command
+blocks.tangle(($args["<destdir/>"]))
+quit(0)
+```
+
 ### View Blocks
 
 ``` blocks function
@@ -562,4 +533,52 @@ proc displayBlocks(blocks: seq[Block]) =
     num += 1
     echo b.content
     echo '-'.repeat(blockTitle.len) & '\n'
+```
+
+
+``` call blocks command
+blocks.displayBlocks()
+```
+
+### Overall program structure
+
+``` /src/nailit.nim
+@{imports}
+@{types}
+@{constants}
+@{functions}
+
+when is_main_module:
+  @{main program}
+```
+
+``` imports
+import regex
+import std/[strutils, tables, strtabs, os]
+import packages/docutils/[rst, rstgen]
+import docopt
+```
+
+``` types
+type
+  @{block type definition}
+```
+
+``` constants
+const
+  @{regex patterns}
+```
+
+``` functions
+@{function to normalize labels}
+
+@{get blocks from source function}
+
+@{weave function}
+
+@{tangle function}
+
+@{insert weaved into html template}
+
+@{blocks function}
 ```

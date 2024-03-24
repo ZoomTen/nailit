@@ -1,6 +1,6 @@
 import regex
-import std/[strutils, tables, strtabs, paths, os]
-import packages/docutils/[rst, rstgen, dochelpers]
+import std/[strutils, tables, strtabs, os]
+import packages/docutils/[rst, rstgen]
 import docopt
 type
   BlockType = enum
@@ -19,6 +19,12 @@ const
   codeBlockPtn = re2"^```(\s*(.+))?"
   codeBlockRefPtn = re2"(@\{(.+)\})"
   codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"
+
+proc normalize(s: string): string =
+  return s
+    .replace("_","")
+    .replace(" ","")
+    .tolowerascii()
 
 proc getBlocks(f: File): seq[Block] =
   proc addBlock(
@@ -76,7 +82,7 @@ proc getBlocks(f: File): seq[Block] =
           line[m.group(1)]
         else:
           ""
-      )
+        )
 
       contentBuffer = ""
       isCodeBlock = not isCodeBlock
@@ -116,7 +122,7 @@ proc weave(blocks: seq[Block]): string =
   proc nameAsLink(m: RegexMatch2, s: string): string =
     return
       "<a href=\"#" &
-        s[m.group(1)].nimIdentBackticksNormalize() &
+        s[m.group(1)].normalize() &
       "\">" &
         s[m.group(0)] &
       "</a>"
@@ -135,35 +141,34 @@ proc weave(blocks: seq[Block]): string =
           .replace(codeBlockRefPtn, nameAsLink)
       
       
-      let normName = txblock.name.nimIdentBackticksNormalize()
+      let normName = txblock.name.normalize()
       
       # start writing converted code block
-      generatedHtml &=
-        (
-          if txblock.name.len > 0:
-            "<div class=\"code-block\" id=\"" & normName & "\">" &
-              "<header class=\"block-title\">" &
-                "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
-              "</header>" &
-              "<pre><code>" &
-                escapedCode &
-              "</code></pre>"
+      generatedHtml &= (
+        if txblock.name.len > 0:
+          "<div class=\"code-block\" id=\"" & normName & "\">" &
+            "<header class=\"block-title\">" &
+              "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
+            "</header>" &
+            "<pre><code>" &
+              escapedCode &
+            "</code></pre>"
       
-          else:
-            "<div class=\"code-block\">" &
-              "<pre><code>" &
-                escapedCode &
-              "</code></pre>"
+        else:
+          "<div class=\"code-block\">" &
+            "<pre><code>" &
+              escapedCode &
+            "</code></pre>"
       
-        )
       
+      )
       
       # if the block is used somewhere else, say so
       if txblock.name.len > 0 and reflist[txblock.name].len > 0:
         generatedHtml &= "<footer class=\"used-by\">Used by "
         
         for i in reflist[txblock.name].keys:
-          let normI = i.nimIdentBackticksNormalize()
+          let normI = i.normalize()
           generatedHtml &=
             "<a href=\"#" & normI & "\">" & i &
             # " &times; " & $(reflist[txblock.name][i]) &
@@ -172,11 +177,12 @@ proc weave(blocks: seq[Block]): string =
       
       
       # end write block
-      generatedHtml &=
+      generatedHtml &= (
         "</div>"
+      
+      )
 
     of Prose:
-      # just convert it wholesale
       let toParaHack = ".. raw:: html\n\n" & txblock.content
       generatedHtml &=
         toParaHack.rstToHtml(
@@ -190,7 +196,7 @@ proc weave(blocks: seq[Block]): string =
   return generatedHtml
 
 
-proc tangle(blocks: seq[Block], dest: Path) =
+proc tangle(blocks: seq[Block], dest: string) =
   var codeBlkMap: Table[string, string]
   proc replaceReferencesWithContent(m: RegexMatch2, s: string): string =
     let keyName = s[m.group(1)]
@@ -235,9 +241,9 @@ proc tangle(blocks: seq[Block], dest: Path) =
 
   for key in codeBlkMap.keys:
     if key.len > 0 and key[0] == '/':
-      let outFileName = dest / Path(key[1 ..^ 1])
-      outFileName.parentDir.string.createDir()
-      outFileName.string.open(fmWrite).write(codeBlkMap[key])
+      let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
+      outFileName.parentDir.createDir()
+      outFileName.open(fmWrite).write(codeBlkMap[key])
       stderr.writeLine "INFO: wrote to file " & outFileName.string
 
 
@@ -329,7 +335,7 @@ when is_main_module:
 
   
   if args["tangle"].to_bool():
-    blocks.tangle(($args["<destdir/>"]).Path())
+    blocks.tangle(($args["<destdir/>"]))
     quit(0)
 
   
