@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>NailIt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/screen.css" media="screen,projection,tv">
+    <link rel="stylesheet" href="css/print.css" media="print">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-twilight.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- BODY -->
+    <footer>
+      Generated from <!-- TITLE -->
+    </footer>
+    <script>
+      window.Prism = window.Prism || {};
+      window.Prism.manual = true;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-nim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script>
+      const prism_mappings = {
+        "nim": Prism.languages.nim,
+        "sh": Prism.languages.bash,
+        "html": Prism.languages.markup
+      }
+      for (let i of document.querySelectorAll(".code-block"))
+      {
+        if (i.classList.length == 2)
+        {
+          let lang_name = i.classList[1].substring(9)
+          for (let j of i.querySelectorAll("code.cb-content"))
+          {
+            if (prism_mappings.hasOwnProperty(lang_name))
+            {
+              j.innerHTML = Prism.highlight(j.innerText, prism_mappings[lang_name], lang_name)
+            }
+          }
+        }
+      }
+      // for (let i of document.querySelectorAll(".code-block code.cb-content")) { i.innerHTML = Prism.highlight(i.innerText, Prism.languages.nim, 'nim') }
+    </script>
+  </body>
+</html>
