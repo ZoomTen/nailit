@@ -108,7 +108,7 @@ if args["blocks"].to_bool():
 
 ### Blocks
 
-Blocks are just text with attributes that make it either "part of the explanation" or "part of the code". Prose blocks are straight-forward, containing only content. Code blocks however, has additional metadata.
+Blocks are just text with attributes that make it either "part of the explanation" or "part of the code". Prose blocks are straight-forward, containing only content. Code blocks however, have additional metadata.
 
 ```nim block type definition
 BlockType = enum
@@ -237,7 +237,9 @@ proc addBlock(
     )
 ```
 
-Here's where we trim the spaces. The final line is what will ultimately be the value for `content`. I do like how Nim lets me do this kinda thing.
+#### Cleaning up block content
+
+Here's where I trim the spaces. The final line is what will ultimately be the value for `content`. I do like how Nim lets me do this kinda thing.
 
 ```nim trim spaces on either end of the content
 var contentStripped = contentBuf

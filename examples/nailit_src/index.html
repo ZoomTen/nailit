@@ -73,7 +73,7 @@ if args["tangle"].to_bool():
   </code><code class="cb-reference"><a href="#calltanglecommand">@{call tangle command}</a></code><code class="cb-content">
 
 if args["blocks"].to_bool():
-  </code><code class="cb-reference"><a href="#callblockscommand">@{call blocks command}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><h3 id="blocks">Blocks</h3><p>Blocks are just text with attributes that make it either &quot;part of the explanation&quot; or &quot;part of the code&quot;. Prose blocks are straight-forward, containing only content. Code blocks however, has additional metadata.</p><div class="code-block language-nim" id="blocktypedefinition"><header class="block-title"><a href="#blocktypedefinition">block type definition</a></header><pre><code class="cb-content">BlockType = enum
+  </code><code class="cb-reference"><a href="#callblockscommand">@{call blocks command}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><h3 id="blocks">Blocks</h3><p>Blocks are just text with attributes that make it either &quot;part of the explanation&quot; or &quot;part of the code&quot;. Prose blocks are straight-forward, containing only content. Code blocks however, have additional metadata.</p><div class="code-block language-nim" id="blocktypedefinition"><header class="block-title"><a href="#blocktypedefinition">block type definition</a></header><pre><code class="cb-content">BlockType = enum
   Prose
   Code
 
@@ -151,7 +151,7 @@ else:
         </code><code class="cb-reference"><a href="#trimspacesoneitherendofthecontent">@{trim spaces on either end of the content}</a></code><code class="cb-content">
       ),
       language: langBuf
-    )</code></pre><footer class="used-by">Used by <a href="#getblocksfromsourcefunction">get blocks from source function</a> </footer></div><p>Here's where we trim the spaces. The final line is what will ultimately be the value for <tt class="docutils literal"><span class="pre">content</span></tt>. I do like how Nim lets me do this kinda thing.</p><div class="code-block language-nim" id="trimspacesoneitherendofthecontent"><header class="block-title"><a href="#trimspacesoneitherendofthecontent">trim spaces on either end of the content</a></header><pre><code class="cb-content">var contentStripped = contentBuf
+    )</code></pre><footer class="used-by">Used by <a href="#getblocksfromsourcefunction">get blocks from source function</a> </footer></div><h4 id="cleaning-up-block-content">Cleaning up block content</h4><p>Here's where I trim the spaces. The final line is what will ultimately be the value for <tt class="docutils literal"><span class="pre">content</span></tt>. I do like how Nim lets me do this kinda thing.</p><div class="code-block language-nim" id="trimspacesoneitherendofthecontent"><header class="block-title"><a href="#trimspacesoneitherendofthecontent">trim spaces on either end of the content</a></header><pre><code class="cb-content">var contentStripped = contentBuf
 
 if contentStripped.len == 1:
   contentStripped = ""
