@@ -28,8 +28,7 @@ proc normalize(s: string): string =
     .tolowerascii()
 
 proc isEmptyMatch(s: Slice[int]): bool {.inline.} =
-  if (s.a > s.b): return true
-  return false
+  return (s.a > s.b)
 
 proc getBlocks(f: File): seq[Block] =
   proc addBlock(
@@ -146,7 +145,6 @@ proc weave(blocks: seq[Block]): string =
   for txblock in blocks:
     case txblock.kind
     of Code:
-      # TODO: make it convert properly...
       let escapedCode =
         txblock.content
           .replace("&", "&amp;")
@@ -215,7 +213,6 @@ proc weave(blocks: seq[Block]): string =
 
   return generatedHtml
 
-
 proc tangle(blocks: seq[Block], dest: string) =
   var codeBlkMap: Table[string, string]
   proc replaceReferencesWithContent(m: RegexMatch2, s: string): string =
@@ -258,7 +255,6 @@ proc tangle(blocks: seq[Block], dest: string) =
     for _ in 0 .. codeBlk.findAll(codeBlockRefSpacesPtn).len: # :(
       codeBlk = codeBlk.replace(codeBlockRefSpacesPtn, replaceReferencesWithContent)
 
-
   for key in codeBlkMap.keys:
     if key.len > 0 and key[0] == '/':
       let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
@@ -275,7 +271,7 @@ proc intoHtmlTemplate(weaved: string, inputTemplate: string = "", title: string 
     else: inputTemplate
   )
 
-  # <!-- TITLE --> is replaced with the document title.
+  # <!-- TITLE --> is replaced with the source file name.
   # <!-- BODY --> is replaced with the body of the document.
   # The spellings need to exact.
 
@@ -323,9 +319,9 @@ when is_main_module:
   """.docopt(
     version = "NailIt 0.2.0"
     )
+  
   let blocks =
     open($args["<source.md>"]).getBlocks()
-
   
   if args["weave"].to_bool():
     let weaved = blocks.weave().intoHtmlTemplate(

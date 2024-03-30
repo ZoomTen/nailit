@@ -25,6 +25,10 @@ a {
   background-color: #222;
 }
 
+span.pre {
+  padding: .125em .25em;
+}
+
 .code-block pre {
   padding: 1em 1em;
   margin: 0;

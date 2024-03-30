@@ -1,12 +1,12 @@
 # NailIt
 
-A quite minimal [literate programming](http://www.literateprogramming.com/) tool, capable of formatting code with documentation, linking to sections of code and backreferencing other sections of code.
+A quite minimal [literate programming](http://www.literateprogramming.com/) tool, capable of formatting code with explanation, linking to sections of code and backreferencing other sections of code.
 
 The tool converts from a Markdown file into HTML, fit for reading online or printing, if you want.
 
 The tool supports converting only one Markdown file at the moment, if you want to use multiple files you'll have to combine them somehow… `cat *.md > onesource.md`?
 
-Also, the tool does not at the moment support appending or changing code blocks "dynamically", so you have to uh… *nail it* I guess. It may be better that way, anyway—at least, in a "documentation" instead of "tutorial" setting.
+Also, the tool does not at the moment support appending code blocks "dynamically", so you have to uh… *nail it* I guess. It may be better that way, anyway—at least, in a "documentation" instead of "tutorial" setting.
 
 ## Building
 
@@ -33,36 +33,75 @@ tangle = generate compileable source code from
 blocks = see what blocks NailIt sees.
 ```
 
-## Document structure
+## Literate program structure
 
-Documents are made up of **code blocks** and **prose blocks**.
+Literate programs consist of **code blocks** and **prose blocks**. This tool accepts literate programs in the form of Markdown-formatted documents.
 
-**Code blocks** are, well, the actual program source code. To make a code block, surround code with a single line of \`\`\` before and after the code portion. The `\`\`\`` line before the code can take one of four forms:
+**Code blocks** are, well, the actual program source code. To make a code block, surround code with a single line of `\`\`\`` before and after the code portion. The `\`\`\`` line *before* the code can take one of four forms:
 
-1. `\`\`\``: an unnamed block interpreted as plain text;
-2. `\`\`\`lang`: an unnamed block interpreted as code in `lang`;
-3. `\`\`\`lang name of block`: a block named `name of block` interpreted as code in `lang`;
-4. `\`\`\` name of block`: a block named `name of block` interpreted as plain text. **In this form, at least one space is needed before the block's name**.
+1. `\`\`\``: starts an unnamed block interpreted as plain text;
+2. `\`\`\`lang`: starts an unnamed block interpreted as code in `lang`;
+3. `\`\`\`lang name of block`: starts a block named `name of block` interpreted as code in `lang`;
+4. `\`\`\` name of block`: starts a block named `name of block` interpreted as plain text. **In this form, at least one space is needed before the block's name!**
 
-Code block titles that start with a `/` will be interpreted as file output relative to the `destdir` specified when calling the program.
+Code block names that start with a `/` will be interpreted as file output relative to the `destdir` specified when invoking `nailit tangle`.
 
 Inside a code block, you can refer to other code blocks like so: `@{Name of other code block}`. They **must** live in its own line, with optional indentation. Indenting these references will add indentation to the inserted code block when tangling it, so you must keep that in mind when using whitespace-sensitive languages.
 
-**Prose blocks** are paragraphs and other stuff *around* the code blocks that explain what it does and why it does. They are formatted as as Markdown… [Nim-flavored Markdown](https://nim-lang.org/docs/markdown_rst.html), at least.
+**Prose blocks** are paragraphs and other stuff *around* the code blocks that explain what the code does and why it does. They are formatted as as Markdown… [Nim-flavored Markdown](https://nim-lang.org/docs/markdown_rst.html), at least. Because it uses Nim's own Markdown compiler, NailIt is relatively self-contained—you don't need an external tool for helping with the Markdown-to-HTML conversion, which is either a feature or a limitation depending on your point of view.
 
 ## Limitations
 
+(or, what similar programs might do that NailIt doesn't do)
+
 * Code block references must live in its own line.
 * No support for multiple source files.
+* No support for creating multi-page output. Though, the single huge page *could* be made into one… if you print it to PDF through your browser :p
 * No support for appending to code blocks, only replacing them (will output a warning).
 * No support for syntax highlighting natively, although you may use a JavaScript-based solution like [Prism.js](https://prismjs.com/).
+* Does not automatically insert prose blocks inside of tangled code blocks as comments.
+* Weaving and tangling must be done separately, e.g. `nailit weave source.md source.html && nailit tangle source.md src/`. There's not really a technical reason for this, I just want to know what I'm doing.
+* No support for line numbers in the weaved output yet.
 
 ## Design Considerations
 
 * Allow code blocks to be written anywhere in the literate program and let NailIt compile them into a program that makes sense, per the Knuthian definition of literate programming.
 * Allow flexibility in laying out a literate program.
-* Remain compatible with existing Markdown engines, like GitHub's renderer.
+* The files it reads should remain compatible with existing Markdown engines, like GitHub's renderer.
 * Keep it simple and probably naive.
+* Reference code block names directly in the output, rather than using section or index numbers, which should help readability by making it obvious what a code block is used in.
+
+## Styling Weaved Output
+
+The body of the weaved output consists of HTML prose (not wrapped in anything… yet?) and code blocks, formatted like this:
+
+```html
+<div id="codeblocktitle" class="code-block">
+  <header class="block-title">
+    <a href="#codeblocktitle">Code block title</a>
+  </header>
+  <pre>
+    <code class="cb-content">
+      Here's a bit of code...
+    </code>
+    <code class="cb-reference">
+      <a href="#someothercode">@ {Some other code}</a>
+    </code>
+    <code class="cb-content">
+      Here's another bit of code...
+    </code>
+  </pre>
+  <footer class="used-by">
+    Used by
+    <a href="#yetanotherpieceofcode">Yet another piece of code</a>,
+    <a href="#andanother">and another</a>
+  </footer>
+</div>
+```
+
+The containing <div> will have `language-*` classes if a language is specified in the corresponding code block in the literate program. Additionally, the "used by" footer will not be present if a code block stands alone, not referenced by any other code block. And the header would disappear when using anonymous code blocks.
+
+(yeah, I need to escape the @{code referencing} stuff… :\\)
 
 ## Source Code
 
@@ -84,7 +123,7 @@ The program is explained below, though it is still a work-in-progress.
 
 ### Entry point
 
-The entry point to the program is about what you'd expect: Parse command line arguments, do stuff accordingly. The really nice `docopt` library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync *and* self-documenting.
+The entry point to the program is about what you'd expect: Parse command line arguments, do stuff accordingly. The really nice [docopt](https://github.com/docopt/docopt.nim) library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync *and* self-documenting.
 
 ```nim main program
 let args = """
@@ -182,15 +221,14 @@ else:
 
 The nature of this loop means that if a code block begins the document, it will come after an empty prose block. Not that it matters, anyway. Since the code block to be added is not actually inserted until it hits an ending `\`\`\``, setting metadata for that code block is deferred.
 
-The regex library I'm using expresses empty matches by having its begin index greater than the end index, but I wanna be lazy, so here's a helper function.
+The [regex library](https://github.com/nitely/nim-regex) I'm using expresses empty matches by having its begin index greater than the end index, but I wanna be lazy, so here's a helper function.
 
 ```nim function to determine if a regex match is empty
 proc isEmptyMatch(s: Slice[int]): bool {.inline.} =
-  if (s.a > s.b): return true
-  return false
+  return (s.a > s.b)
 ```
 
-Groups 2 and 3 contain the name of the new block, so I'll check for both.
+Groups 2 (inside a named code block with language) and 3 (inside a named plain text code block) contain the name of the new block, so I'll check for both.
 
 ```nim set the name for the next block conditionally
 nextNameBuffer = (
@@ -200,7 +238,7 @@ nextNameBuffer = (
 )
 ```
 
-As are the language identifier in groups 0 and 1. Note here that group 0 really means the 0th (first) group, and not "the entire match" as Python would have it.
+As are the language identifier in groups 0 (inside an anonymous code block) and 1 (inside a named code block). Note here that group 0 really means the first group, and not "the entire match" as Python would have it.
 
 ```nim set the language for the next block conditionally
 nextLangBuffer = (
@@ -333,7 +371,6 @@ generatedHtml &=
 On the other hand, converting code blocks aren't so trivial. At minimum the code block needs to have escapes in order for them not to be interpreted as HTML code when I don't want it, which can lead to incorrect code displays. Then there's also the extra metadata that needs to be laid out so as to easily identify and navigate between them.
 
 ```nim convert a code block into html
-# TODO: make it convert properly...
 let escapedCode =
   @{make the code block html-friendly}
 
@@ -516,7 +553,7 @@ proc tangle(blocks: seq[Block], dest: string) =
 
 #### Replacing code block references
 
-First I'll want to go through every code block in document order and populate the code block mappings with the contents of their respective code blocks verbatim. There's no "append" feature, but there is a "replace" feature (no special syntax required), which will warn you when you're replacing a block.
+First I'll want to go through every code block in document order and populate the code block mappings with the contents of their respective code blocks verbatim. There's no "append" feature, but there is a "replace" "feature" (no special syntax required), which will warn you when you're replacing a block.
 
 ```nim fill code block mappings
 for txblock in blocks:
@@ -573,11 +610,11 @@ NailIt will only save to files code blocks which start with a `/`. The `/` here 
 
 ```nim save code block to files
 for key in codeBlkMap.keys:
-    if key.len > 0 and key[0] == '/':
-      let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
-      outFileName.parentDir.createDir()
-      outFileName.open(fmWrite).write(codeBlkMap[key])
-      stderr.writeLine "INFO: wrote to file " & outFileName.string
+  if key.len > 0 and key[0] == '/':
+    let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
+    outFileName.parentDir.createDir()
+    outFileName.open(fmWrite).write(codeBlkMap[key])
+    stderr.writeLine "INFO: wrote to file " & outFileName.string
 ```
 
 #### Calling the tangle command

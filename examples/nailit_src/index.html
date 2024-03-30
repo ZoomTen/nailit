@@ -9,10 +9,10 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-twilight.min.css" rel="stylesheet" />
   </head>
   <body>
-    <h1 id="nailit">NailIt</h1><p>A quite minimal <a class="reference external" href="http://www.literateprogramming.com/">literate programming</a> tool, capable of formatting code with documentation, linking to sections of code and backreferencing other sections of code.</p>
+    <h1 id="nailit">NailIt</h1><p>A quite minimal <a class="reference external" href="http://www.literateprogramming.com/">literate programming</a> tool, capable of formatting code with explanation, linking to sections of code and backreferencing other sections of code.</p>
 <p>The tool converts from a Markdown file into HTML, fit for reading online or printing, if you want.</p>
 <p>The tool supports converting only one Markdown file at the moment, if you want to use multiple files you'll have to combine them somehow… <tt class="docutils literal"><span class="pre">cat *.md &gt; onesource.md</span></tt>?</p>
-<p>Also, the tool does not at the moment support appending or changing code blocks &quot;dynamically&quot;, so you have to uh… <em>nail it</em> I guess. It may be better that way, anyway—at least, in a &quot;documentation&quot; instead of &quot;tutorial&quot; setting.</p>
+<p>Also, the tool does not at the moment support appending code blocks &quot;dynamically&quot;, so you have to uh… <em>nail it</em> I guess. It may be better that way, anyway—at least, in a &quot;documentation&quot; instead of &quot;tutorial&quot; setting.</p>
 
 <h2 id="building">Building</h2><p>Requires <a class="reference external" href="https://nim-lang.org/">Nim</a> ≥1.6.x. The standard distribution should include the <tt class="docutils literal"><span class="pre">nimble</span></tt> tool, use <tt class="docutils literal"><span class="pre">nimble build</span></tt> to make a binary.</p>
 
@@ -31,33 +31,62 @@ weave = generate a human-readable HTML document
 tangle = generate compileable source code from
           literate programs.
 
-blocks = see what blocks NailIt sees.</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h2 id="document-structure">Document structure</h2><p>Documents are made up of <strong>code blocks</strong> and <strong>prose blocks</strong>.</p>
-<p><strong>Code blocks</strong> are, well, the actual program source code. To make a code block, surround code with a single line of ``` before and after the code portion. The <tt class="docutils literal"><span class="pre">```</span></tt> line before the code can take one of four forms:</p>
-<ol class="simple"><li><tt class="docutils literal"><span class="pre">```</span></tt>: an unnamed block interpreted as plain text;</li>
-<li><tt class="docutils literal"><span class="pre">```lang</span></tt>: an unnamed block interpreted as code in <tt class="docutils literal"><span class="pre">lang</span></tt>;</li>
-<li><tt class="docutils literal"><span class="pre">```lang name of block</span></tt>: a block named <tt class="docutils literal"><span class="pre">name of block</span></tt> interpreted as code in <tt class="docutils literal"><span class="pre">lang</span></tt>;</li>
-<li><tt class="docutils literal"><span class="pre">``` name of block</span></tt>: a block named <tt class="docutils literal"><span class="pre">name of block</span></tt> interpreted as plain text. <strong>In this form, at least one space is needed before the block's name</strong>.</li>
+blocks = see what blocks NailIt sees.</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h2 id="literate-program-structure">Literate program structure</h2><p>Literate programs consist of <strong>code blocks</strong> and <strong>prose blocks</strong>. This tool accepts literate programs in the form of Markdown-formatted documents.</p>
+<p><strong>Code blocks</strong> are, well, the actual program source code. To make a code block, surround code with a single line of <tt class="docutils literal"><span class="pre">```</span></tt> before and after the code portion. The <tt class="docutils literal"><span class="pre">```</span></tt> line <em>before</em> the code can take one of four forms:</p>
+<ol class="simple"><li><tt class="docutils literal"><span class="pre">```</span></tt>: starts an unnamed block interpreted as plain text;</li>
+<li><tt class="docutils literal"><span class="pre">```lang</span></tt>: starts an unnamed block interpreted as code in <tt class="docutils literal"><span class="pre">lang</span></tt>;</li>
+<li><tt class="docutils literal"><span class="pre">```lang name of block</span></tt>: starts a block named <tt class="docutils literal"><span class="pre">name of block</span></tt> interpreted as code in <tt class="docutils literal"><span class="pre">lang</span></tt>;</li>
+<li><tt class="docutils literal"><span class="pre">``` name of block</span></tt>: starts a block named <tt class="docutils literal"><span class="pre">name of block</span></tt> interpreted as plain text. <strong>In this form, at least one space is needed before the block's name!</strong></li>
 </ol>
-<p>Code block titles that start with a <tt class="docutils literal"><span class="pre">/</span></tt> will be interpreted as file output relative to the <tt class="docutils literal"><span class="pre">destdir</span></tt> specified when calling the program.</p>
+<p>Code block names that start with a <tt class="docutils literal"><span class="pre">/</span></tt> will be interpreted as file output relative to the <tt class="docutils literal"><span class="pre">destdir</span></tt> specified when invoking <tt class="docutils literal"><span class="pre">nailit tangle</span></tt>.</p>
 <p>Inside a code block, you can refer to other code blocks like so: <tt class="docutils literal"><span class="pre">@{Name of other code block}</span></tt>. They <strong>must</strong> live in its own line, with optional indentation. Indenting these references will add indentation to the inserted code block when tangling it, so you must keep that in mind when using whitespace-sensitive languages.</p>
-<p><strong>Prose blocks</strong> are paragraphs and other stuff <em>around</em> the code blocks that explain what it does and why it does. They are formatted as as Markdown… <a class="reference external" href="https://nim-lang.org/docs/markdown_rst.html">Nim-flavored Markdown</a>, at least.</p>
+<p><strong>Prose blocks</strong> are paragraphs and other stuff <em>around</em> the code blocks that explain what the code does and why it does. They are formatted as as Markdown… <a class="reference external" href="https://nim-lang.org/docs/markdown_rst.html">Nim-flavored Markdown</a>, at least. Because it uses Nim's own Markdown compiler, NailIt is relatively self-contained—you don't need an external tool for helping with the Markdown-to-HTML conversion, which is either a feature or a limitation depending on your point of view.</p>
 
-<h2 id="limitations">Limitations</h2><ul class="simple"><li>Code block references must live in its own line.</li>
+<h2 id="limitations">Limitations</h2><p>(or, what similar programs might do that NailIt doesn't do)</p>
+<ul class="simple"><li>Code block references must live in its own line.</li>
 <li>No support for multiple source files.</li>
+<li>No support for creating multi-page output. Though, the single huge page <em>could</em> be made into one… if you print it to PDF through your browser :p</li>
 <li>No support for appending to code blocks, only replacing them (will output a warning).</li>
 <li>No support for syntax highlighting natively, although you may use a JavaScript-based solution like <a class="reference external" href="https://prismjs.com/">Prism.js</a>.</li>
+<li>Does not automatically insert prose blocks inside of tangled code blocks as comments.</li>
+<li>Weaving and tangling must be done separately, e.g. <tt class="docutils literal"><span class="pre">nailit weave source.md source.html &amp;&amp; nailit tangle source.md src/</span></tt>. There's not really a technical reason for this, I just want to know what I'm doing.</li>
+<li>No support for line numbers in the weaved output yet.</li>
 </ul>
 
 <h2 id="design-considerations">Design Considerations</h2><ul class="simple"><li>Allow code blocks to be written anywhere in the literate program and let NailIt compile them into a program that makes sense, per the Knuthian definition of literate programming.</li>
 <li>Allow flexibility in laying out a literate program.</li>
-<li>Remain compatible with existing Markdown engines, like GitHub's renderer.</li>
+<li>The files it reads should remain compatible with existing Markdown engines, like GitHub's renderer.</li>
 <li>Keep it simple and probably naive.</li>
+<li>Reference code block names directly in the output, rather than using section or index numbers, which should help readability by making it obvious what a code block is used in.</li>
 </ul>
+
+<h2 id="styling-weaved-output">Styling Weaved Output</h2><p>The body of the weaved output consists of HTML prose (not wrapped in anything… yet?) and code blocks, formatted like this:</p><div class="code-block language-html"><pre><code class="cb-content">&lt;div id="codeblocktitle" class="code-block"&gt;
+  &lt;header class="block-title"&gt;
+    &lt;a href="#codeblocktitle"&gt;Code block title&lt;/a&gt;
+  &lt;/header&gt;
+  &lt;pre&gt;
+    &lt;code class="cb-content"&gt;
+      Here's a bit of code...
+    &lt;/code&gt;
+    &lt;code class="cb-reference"&gt;
+      &lt;a href="#someothercode"&gt;@ {Some other code}&lt;/a&gt;
+    &lt;/code&gt;
+    &lt;code class="cb-content"&gt;
+      Here's another bit of code...
+    &lt;/code&gt;
+  &lt;/pre&gt;
+  &lt;footer class="used-by"&gt;
+    Used by
+    &lt;a href="#yetanotherpieceofcode"&gt;Yet another piece of code&lt;/a&gt;,
+    &lt;a href="#andanother"&gt;and another&lt;/a&gt;
+  &lt;/footer&gt;
+&lt;/div&gt;</code></pre></div><p>The containing &lt;div&gt; will have <tt class="docutils literal"><span class="pre">language-*</span></tt> classes if a language is specified in the corresponding code block in the literate program. Additionally, the &quot;used by&quot; footer will not be present if a code block stands alone, not referenced by any other code block. And the header would disappear when using anonymous code blocks.</p>
+<p>(yeah, I need to escape the @{code referencing} stuff… :\)</p>
 
 <h2 id="source-code">Source Code</h2><p>This README contains NailIt's entire source code! However for convenience and bootstrapping, this repo also provides the sources generated off this README. It also serves as a practical explanation on what literate programs NailIt can process.</p>
 <p>To make the compileable source code from this README, do:</p><div class="code-block language-sh"><pre><code class="cb-content">nailit tangle README.md .</code></pre></div><p>To generate a literate program as HTML from this README, do:</p><div class="code-block language-sh"><pre><code class="cb-content">nailit weave README.md index.html</code></pre></div><p>The program is explained below, though it is still a work-in-progress.</p>
 
-<h3 id="entry-point">Entry point</h3><p>The entry point to the program is about what you'd expect: Parse command line arguments, do stuff accordingly. The really nice <tt class="docutils literal"><span class="pre">docopt</span></tt> library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync <em>and</em> self-documenting.</p><div class="code-block language-nim" id="mainprogram"><header class="block-title"><a href="#mainprogram">main program</a></header><pre><code class="cb-content">let args = """
+<h3 id="entry-point">Entry point</h3><p>The entry point to the program is about what you'd expect: Parse command line arguments, do stuff accordingly. The really nice <a class="reference external" href="https://github.com/docopt/docopt.nim">docopt</a> library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync <em>and</em> self-documenting.</p><div class="code-block language-nim" id="mainprogram"><header class="block-title"><a href="#mainprogram">main program</a></header><pre><code class="cb-content">let args = """
 </code><code class="cb-reference"><a href="#commandlinearguments">@{command line arguments}</a></code><code class="cb-content">
 """.docopt(
   version = "NailIt 0.2.0"
@@ -120,13 +149,12 @@ codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"</code></pre><footer class="us
   isCodeBlock = not isCodeBlock
 else:
   contentBuffer &amp;= line &amp; "\n"</code></pre><footer class="used-by">Used by <a href="#getblocksfromsourcefunction">get blocks from source function</a> </footer></div><p>The nature of this loop means that if a code block begins the document, it will come after an empty prose block. Not that it matters, anyway. Since the code block to be added is not actually inserted until it hits an ending <tt class="docutils literal"><span class="pre">```</span></tt>, setting metadata for that code block is deferred.</p>
-<p>The regex library I'm using expresses empty matches by having its begin index greater than the end index, but I wanna be lazy, so here's a helper function.</p><div class="code-block language-nim" id="functiontodetermineifaregexmatchisempty"><header class="block-title"><a href="#functiontodetermineifaregexmatchisempty">function to determine if a regex match is empty</a></header><pre><code class="cb-content">proc isEmptyMatch(s: Slice[int]): bool {.inline.} =
-  if (s.a &gt; s.b): return true
-  return false</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><p>Groups 2 and 3 contain the name of the new block, so I'll check for both.</p><div class="code-block language-nim" id="setthenameforthenextblockconditionally"><header class="block-title"><a href="#setthenameforthenextblockconditionally">set the name for the next block conditionally</a></header><pre><code class="cb-content">nextNameBuffer = (
+<p>The <a class="reference external" href="https://github.com/nitely/nim-regex">regex library</a> I'm using expresses empty matches by having its begin index greater than the end index, but I wanna be lazy, so here's a helper function.</p><div class="code-block language-nim" id="functiontodetermineifaregexmatchisempty"><header class="block-title"><a href="#functiontodetermineifaregexmatchisempty">function to determine if a regex match is empty</a></header><pre><code class="cb-content">proc isEmptyMatch(s: Slice[int]): bool {.inline.} =
+  return (s.a &gt; s.b)</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><p>Groups 2 (inside a named code block with language) and 3 (inside a named plain text code block) contain the name of the new block, so I'll check for both.</p><div class="code-block language-nim" id="setthenameforthenextblockconditionally"><header class="block-title"><a href="#setthenameforthenextblockconditionally">set the name for the next block conditionally</a></header><pre><code class="cb-content">nextNameBuffer = (
   if not (m.group(2).isEmptyMatch()): line[m.group(2)].strip()
   elif not (m.group(3).isEmptyMatch()): line[m.group(3)].strip()
   else: ""
-)</code></pre><footer class="used-by">Used by <a href="#parsealineandmakenewblocks">parse a line and make new blocks</a> </footer></div><p>As are the language identifier in groups 0 and 1. Note here that group 0 really means the 0th (first) group, and not &quot;the entire match&quot; as Python would have it.</p><div class="code-block language-nim" id="setthelanguageforthenextblockconditionally"><header class="block-title"><a href="#setthelanguageforthenextblockconditionally">set the language for the next block conditionally</a></header><pre><code class="cb-content">nextLangBuffer = (
+)</code></pre><footer class="used-by">Used by <a href="#parsealineandmakenewblocks">parse a line and make new blocks</a> </footer></div><p>As are the language identifier in groups 0 (inside an anonymous code block) and 1 (inside a named code block). Note here that group 0 really means the first group, and not &quot;the entire match&quot; as Python would have it.</p><div class="code-block language-nim" id="setthelanguageforthenextblockconditionally"><header class="block-title"><a href="#setthelanguageforthenextblockconditionally">set the language for the next block conditionally</a></header><pre><code class="cb-content">nextLangBuffer = (
   if not (m.group(0).isEmptyMatch()): line[m.group(0)]
   elif not (m.group(1).isEmptyMatch()): line[m.group(1)]
   else: ""
@@ -204,8 +232,7 @@ generatedHtml &amp;=
       roSupportRawDirective,
     },
     modeStyleInsensitive.newStringTable(),
-  )</code></pre><footer class="used-by">Used by <a href="#weavefunction">weave function</a> </footer></div><h4 id="generating-the-code-block-html">Generating the code block HTML</h4><p>On the other hand, converting code blocks aren't so trivial. At minimum the code block needs to have escapes in order for them not to be interpreted as HTML code when I don't want it, which can lead to incorrect code displays. Then there's also the extra metadata that needs to be laid out so as to easily identify and navigate between them.</p><div class="code-block language-nim" id="convertacodeblockintohtml"><header class="block-title"><a href="#convertacodeblockintohtml">convert a code block into html</a></header><pre><code class="cb-content"># TODO: make it convert properly...
-let escapedCode =
+  )</code></pre><footer class="used-by">Used by <a href="#weavefunction">weave function</a> </footer></div><h4 id="generating-the-code-block-html">Generating the code block HTML</h4><p>On the other hand, converting code blocks aren't so trivial. At minimum the code block needs to have escapes in order for them not to be interpreted as HTML code when I don't want it, which can lead to incorrect code displays. Then there's also the extra metadata that needs to be laid out so as to easily identify and navigate between them.</p><div class="code-block language-nim" id="convertacodeblockintohtml"><header class="block-title"><a href="#convertacodeblockintohtml">convert a code block into html</a></header><pre><code class="cb-content">let escapedCode =
   </code><code class="cb-reference"><a href="#makethecodeblockhtml-friendly">@{make the code block html-friendly}</a></code><code class="cb-content">
 
 let normName = txblock.name.normalize()
@@ -310,7 +337,7 @@ quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main 
 
   </code><code class="cb-reference"><a href="#fillcodeblockmappings">@{fill code block mappings}</a></code><code class="cb-content">
   </code><code class="cb-reference"><a href="#modifycodeblockmappingswithactualvalues">@{modify code block mappings with actual values}</a></code><code class="cb-content">
-  </code><code class="cb-reference"><a href="#savecodeblocktofiles">@{save code block to files}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><h4 id="replacing-code-block-references">Replacing code block references</h4><p>First I'll want to go through every code block in document order and populate the code block mappings with the contents of their respective code blocks verbatim. There's no &quot;append&quot; feature, but there is a &quot;replace&quot; feature (no special syntax required), which will warn you when you're replacing a block.</p><div class="code-block language-nim" id="fillcodeblockmappings"><header class="block-title"><a href="#fillcodeblockmappings">fill code block mappings</a></header><pre><code class="cb-content">for txblock in blocks:
+  </code><code class="cb-reference"><a href="#savecodeblocktofiles">@{save code block to files}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><h4 id="replacing-code-block-references">Replacing code block references</h4><p>First I'll want to go through every code block in document order and populate the code block mappings with the contents of their respective code blocks verbatim. There's no &quot;append&quot; feature, but there is a &quot;replace&quot; &quot;feature&quot; (no special syntax required), which will warn you when you're replacing a block.</p><div class="code-block language-nim" id="fillcodeblockmappings"><header class="block-title"><a href="#fillcodeblockmappings">fill code block mappings</a></header><pre><code class="cb-content">for txblock in blocks:
   case txblock.kind
   of Code:
     if txblock.name.len &lt; 1: continue
@@ -345,11 +372,11 @@ quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main 
 
   stderr.writeLine "WARNING: key " &amp; keyName &amp; " not found!"
   return ""</code></pre><footer class="used-by">Used by <a href="#tanglefunction">tangle function</a> </footer></div><h4 id="saving-to-files">Saving to files</h4><p>NailIt will only save to files code blocks which start with a <tt class="docutils literal"><span class="pre">/</span></tt>. The <tt class="docutils literal"><span class="pre">/</span></tt> here means &quot;your current working directory or your specified user directory.&quot;</p><div class="code-block language-nim" id="savecodeblocktofiles"><header class="block-title"><a href="#savecodeblocktofiles">save code block to files</a></header><pre><code class="cb-content">for key in codeBlkMap.keys:
-    if key.len &gt; 0 and key[0] == '/':
-      let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
-      outFileName.parentDir.createDir()
-      outFileName.open(fmWrite).write(codeBlkMap[key])
-      stderr.writeLine "INFO: wrote to file " &amp; outFileName.string</code></pre><footer class="used-by">Used by <a href="#tanglefunction">tangle function</a> </footer></div><h4 id="calling-the-tangle-command">Calling the tangle command</h4><div class="code-block language-nim" id="calltanglecommand"><header class="block-title"><a href="#calltanglecommand">call tangle command</a></header><pre><code class="cb-content">blocks.tangle(($args["&lt;destdir/&gt;"]))
+  if key.len &gt; 0 and key[0] == '/':
+    let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
+    outFileName.parentDir.createDir()
+    outFileName.open(fmWrite).write(codeBlkMap[key])
+    stderr.writeLine "INFO: wrote to file " &amp; outFileName.string</code></pre><footer class="used-by">Used by <a href="#tanglefunction">tangle function</a> </footer></div><h4 id="calling-the-tangle-command">Calling the tangle command</h4><div class="code-block language-nim" id="calltanglecommand"><header class="block-title"><a href="#calltanglecommand">call tangle command</a></header><pre><code class="cb-content">blocks.tangle(($args["&lt;destdir/&gt;"]))
 quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h3 id="view-blocks">View Blocks</h3><p>This <tt class="docutils literal"><span class="pre">blocks</span></tt> command is really just a debugging tool. It answers the question of &quot;What does NailIt actually see when I give it my literate program?&quot;</p><div class="code-block language-nim" id="blocksfunction"><header class="block-title"><a href="#blocksfunction">blocks function</a></header><pre><code class="cb-content">proc displayBlocks(blocks: seq[Block]) =
   var num = 1
   for b in blocks:
