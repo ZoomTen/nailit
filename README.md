@@ -99,7 +99,7 @@ The body of the weaved output consists of HTML prose (not wrapped in anything…
 </div>
 ```
 
-The containing <div> will have `language-*` classes if a language is specified in the corresponding code block in the literate program. Additionally, the "used by" footer will not be present if a code block stands alone, not referenced by any other code block. And the header would disappear when using anonymous code blocks.
+The containing `<div>` will have `language-*` classes if a language is specified in the corresponding code block in the literate program. Additionally, the "used by" footer will not be present if a code block stands alone, not referenced by any other code block. And the header would disappear when using anonymous code blocks.
 
 (yeah, I need to escape the @{code referencing} stuff… :\\)
 
@@ -352,7 +352,7 @@ for txblock in blocks:
 
 #### Generating the prose block HTML
 
-Converting prose blocks to HTML is trivial: just use the `rstToHtml` function on the entire input and append it to the HTML. Although there is a bit of a quirk when the contents are not preceded with a blank line: the first paragraph will be text whereas the others would be surrounded in <p>. This can add pain to layout and styling, and so I've put a `.. raw:: html` hack to force the first paragraph to be surrounded in <p>.
+Converting prose blocks to HTML is trivial: just use the `rstToHtml` function on the entire input and append it to the HTML. Although there is a bit of a quirk when the contents are not preceded with a blank line: the first paragraph will be text whereas the others would be surrounded in `<p>`. This can add pain to layout and styling, and so I've put a `.. raw:: html` hack to force the first paragraph to be surrounded in `<p>`.
 
 ```nim convert a prose block into html
 let toParaHack = ".. raw:: html\n\n" & txblock.content
