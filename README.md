@@ -110,16 +110,16 @@ This README contains NailIt's entire source code! However for convenience and bo
 To make the compileable source code from this README, do:
 
 ```sh
-nailit tangle README.md .
+nimble run -- tangle README.md .
 ```
 
 To generate a literate program as HTML from this README, do:
 
 ```sh
-nailit weave README.md index.html
+nimble run -- weave README.md index.html
 ```
 
-The program is explained below, though it is still a work-in-progress.
+(The `nimble run --` command is used here to make it more straight-forward, but you can instead build and just use `./nailit` directly)
 
 ### Entry point
 
