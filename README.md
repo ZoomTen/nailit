@@ -37,54 +37,64 @@ blocks = see what blocks NailIt sees.
 
 Documents are made up of **code blocks** and **prose blocks**.
 
-**Code blocks** are, well, the actual program source code. To make a code block, surround code with a single line of \`\`\` before and after, with the preceding \`\`\` line containing the title as so: **\`\`\` Title of code block.**
+**Code blocks** are, well, the actual program source code. To make a code block, surround code with a single line of \`\`\` before and after the code portion. The `\`\`\`` line before the code can take one of four forms:
 
-**Prose blocks** are paragraphs and other stuff *around* the code blocks that explain what it does and why it does. These tend to be richer than just commenting code, although you could do both.
+1. `\`\`\``: an unnamed block interpreted as plain text;
+2. `\`\`\`lang`: an unnamed block interpreted as code in `lang`;
+3. `\`\`\`lang name of block`: a block named `name of block` interpreted as code in `lang`;
+4. `\`\`\` name of block`: a block named `name of block` interpreted as plain text. **In this form, at least one space is needed before the block's name**.
 
 Code block titles that start with a `/` will be interpreted as file output relative to the `destdir` specified when calling the program.
 
-Code blocks without a title will—at present—cause the program to crash.
+Inside a code block, you can refer to other code blocks like so: `@{Name of other code block}`. They **must** live in its own line, with optional indentation. Indenting these references will add indentation to the inserted code block when tangling it, so you must keep that in mind when using whitespace-sensitive languages.
 
-Everything else outside of code blocks are considered **prose blocks** and will be formatted as Markdown… [Nim-flavored Markdown](https://nim-lang.org/docs/markdown_rst.html), at least.
-
-Inside a code block, you can refer to other code blocks like so: **@{Name of other code block}**. They **must** live in its own line, with optional indentation. Indenting these references will add indentation to the inserted code block when tangling it, so you must keep that in mind when using whitespace-sensitive languages.
+**Prose blocks** are paragraphs and other stuff *around* the code blocks that explain what it does and why it does. They are formatted as as Markdown… [Nim-flavored Markdown](https://nim-lang.org/docs/markdown_rst.html), at least.
 
 ## Limitations
 
 * Code block references must live in its own line.
 * No support for multiple source files.
 * No support for appending to code blocks, only replacing them (will output a warning).
-* No support for syntax highlighting.
+* No support for syntax highlighting natively, although you may use a JavaScript-based solution like [Prism.js](https://prismjs.com/).
 
-## Source code
+## Design Considerations
 
-Self-hosting sounds cool, so this README also contains NailIt's entire source code! It also serves as a practical explanation on what makes a literate program.
+* Allow code blocks to be written anywhere in the literate program and let NailIt compile them into a program that makes sense, per the Knuthian definition of literate programming.
+* Allow flexibility in laying out a literate program.
+* Remain compatible with existing Markdown engines, like GitHub's renderer.
+* Keep it simple and probably naive.
 
-To make the compileable source code, do:
+## Source Code
 
-```
+This README contains NailIt's entire source code! However for convenience and bootstrapping, this repo also provides the sources generated off this README. It also serves as a practical explanation on what literate programs NailIt can process.
+
+To make the compileable source code from this README, do:
+
+```sh
 nailit tangle README.md .
 ```
 
-To generate the literate program document, do:
+To generate a literate program as HTML from this README, do:
 
+```sh
+nailit weave README.md index.html
 ```
-nailit weave README.md > index.html
-```
 
-This explanation of the program is still a work-in-progress.
+The program is explained below, though it is still a work-in-progress.
 
-### Main program
+### Entry point
 
-The really nice `docopt` library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync *and* self-documenting.
+The entry point to the program is about what you'd expect: Parse command line arguments, do stuff accordingly. The really nice `docopt` library is used to transform the command line help string into actual arguments the program can parse. The commands, at least, stay in-sync *and* self-documenting.
 
-``` main program
+```nim main program
 let args = """
 @{command line arguments}
 """.docopt(
-  version = "NailIt 0.1.1"
+  version = "NailIt 0.2.0"
   )
-@{read blocks from source file}
+
+let blocks =
+  open($args["<source.md>"]).getBlocks()
 
 if args["weave"].to_bool():
   @{call weave command}
@@ -96,20 +106,11 @@ if args["blocks"].to_bool():
   @{call blocks command}
 ```
 
-The `getBlocks` function takes in a string, so we use the stdlib to read a markdown document as a string to then pass into the function. Note here that in Nim, `a.getBlocks() == getBlocks(a)`.
-
-``` read blocks from source file
-let blocks =
-  open($args["<source.md>"]).getBlocks()
-```
-
-The functions to call the features of NailIt will be described in the appropriate sections.
-
 ### Blocks
 
-Blocks are just text with attributes that a
+Blocks are just text with attributes that make it either "part of the explanation" or "part of the code". Prose blocks are straight-forward, containing only content. Code blocks however, has additional metadata.
 
-``` block type definition
+```nim block type definition
 BlockType = enum
   Prose
   Code
@@ -119,15 +120,16 @@ Block = object
   case kind: BlockType
   of Code:
     name: string
+    language: string
   else:
     discard
 ```
 
 #### Parsing blocks from the document
 
-Basically, parsing is done on a line-by-line basis.
+Basically, parsing is done on a line-by-line basis. This function takes in a file input and spits out the list of blocks resulting from that file.
 
-``` get blocks from source function
+```nim get blocks from source function
 proc getBlocks(f: File): seq[Block] =
   @{helper function to add a block}
 
@@ -138,6 +140,7 @@ proc getBlocks(f: File): seq[Block] =
   var
     contentBuffer = ""
     nextNameBuffer = ""
+    nextLangBuffer = ""
 
   for line in lines(f):
     @{parse a line and make new blocks}
@@ -147,57 +150,75 @@ proc getBlocks(f: File): seq[Block] =
 
 While parsing, the program looks for these specific patterns:
 
-* `codeBlockPtn` scans for code block *definitions*, like `\`\`\`` or `\`\`\` named block`.
+* `codeBlockPtn` scans for the start and end of code block *definitions*, in the 4 forms described earlier in this document.
 * `codeBlockRefPtn` scans for code block *references*, like `@{named block}`
 * `codeBlockRefSpacesPtn` is like `codeBlockRefPtn`, except it grabs whatever leading spaces are in it as well.
 
-``` regex patterns
-codeBlockPtn = re2"^```(\s*(.+))?"
+```nim regex patterns
+codeBlockPtn = re2"^```$|^```(\w+)$|^```(\w+)\s+(.+)$|^```\s+(.+)$"
 codeBlockRefPtn = re2"(@\{(.+)\})"
 codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"
 ```
 
-The two types of blocks in the markdown document live separately and cannot be nested, i.e. no code blocks in prose blocks, vice versa. The document is parsed using a switch that asks "is the current block a code block?", which is toggled by hitting a line starting with a `\`\`\``.
+The two types of blocks in the markdown document live separately and cannot be nested, i.e. no code blocks in prose blocks and vice versa, no code blocks within code blocks, etc. On every line, when one of the code block patterns are found, a switch that asks "is the current block a code block?", is toggled.
 
-When a `\`\`\`` is encountered at the start of the document, it means this first block is a code block. Which means, this part of the code will insert an empty prose block before it, which shouldn't really matter for export purposes.
-
-Since the code block to be added is not actually inserted until it hits an ending `\`\`\``, name-setting is deferred until then, just like content-setting.
-
-``` parse a line and make new blocks
+```nim parse a line and make new blocks
 if (var m: RegexMatch2; line.match(codeBlockPtn, m)):
   totalBlocks.addBlock(
     (if isCodeBlock: Code else: Prose),
     contentBuffer,
-    nextNameBuffer
+    nextNameBuffer,
+    nextLangBuffer
   )
   # TODO: BUG a blank line in place of this line makes the
   # below line have incorrect indentation
   @{set the name for the next block conditionally}
+  @{set the language for the next block conditionally}
   contentBuffer = ""
   isCodeBlock = not isCodeBlock
 else:
   contentBuffer &= line & "\n"
 ```
 
-Names for code blocks are optional. The regex library will have its ranges set below 0 if it can't find a name, so I'm taking it into account here.
+The nature of this loop means that if a code block begins the document, it will come after an empty prose block. Not that it matters, anyway. Since the code block to be added is not actually inserted until it hits an ending `\`\`\``, setting metadata for that code block is deferred.
 
-``` set the name for the next block conditionally
-nextNameBuffer = (
-  if (m.group(1).a > -1) and (m.group(1).b > -1):
-    line[m.group(1)]
-  else:
-    ""
-  )
+The regex library I'm using expresses empty matches by having its begin index greater than the end index, but I wanna be lazy, so here's a helper function.
+
+```nim function to determine if a regex match is empty
+proc isEmptyMatch(s: Slice[int]): bool {.inline.} =
+  if (s.a > s.b): return true
+  return false
 ```
 
-Block-adding is done by a helper function `addBlock`. This is to handle things like spaces before and after the content, as well as potentially other headaches.
+Groups 2 and 3 contain the name of the new block, so I'll check for both.
 
-``` helper function to add a block
+```nim set the name for the next block conditionally
+nextNameBuffer = (
+  if not (m.group(2).isEmptyMatch()): line[m.group(2)].strip()
+  elif not (m.group(3).isEmptyMatch()): line[m.group(3)].strip()
+  else: ""
+)
+```
+
+As are the language identifier in groups 0 and 1. Note here that group 0 really means the 0th (first) group, and not "the entire match" as Python would have it.
+
+```nim set the language for the next block conditionally
+nextLangBuffer = (
+  if not (m.group(0).isEmptyMatch()): line[m.group(0)]
+  elif not (m.group(1).isEmptyMatch()): line[m.group(1)]
+  else: ""
+)
+```
+
+This helper function exists to handle things like spaces before and after the content, as well as potentially other issues should they come in the future.
+
+```nim helper function to add a block
 proc addBlock(
     blocks: var seq[Block],
     parseAs: BlockType,
     contentBuf: string,
-    nameBuf: string = ""
+    nameBuf: string = "",
+    langBuf: string = ""
 ): void =
   case parseAs
   of Prose:
@@ -211,13 +232,14 @@ proc addBlock(
       name: nameBuf,
       content: (
         @{trim spaces on either end of the content}
-      )
+      ),
+      language: langBuf
     )
 ```
 
-Content may have unnecessary newlines at the start and/or the end that we don't really need, so we may as well strip them out.
+Here's where we trim the spaces. The final line is what will ultimately be the value for `content`. I do like how Nim lets me do this kinda thing.
 
-``` trim spaces on either end of the content
+```nim trim spaces on either end of the content
 var contentStripped = contentBuf
 
 if contentStripped.len == 1:
@@ -235,7 +257,7 @@ contentStripped
 
 The `weave` command compiles an HTML page from a literate program.
 
-``` weave function
+```nim weave function
 proc weave(blocks: seq[Block]): string =
   var reflist: Table[string, CountTable[string]]
   var generatedHtml = ""
@@ -252,32 +274,13 @@ proc weave(blocks: seq[Block]): string =
     of Prose:
       @{convert a prose block into html}
   return generatedHtml
-
 ```
 
-The header should be a link to itself so it can be linked somewhere else
+#### Counting code block references
 
-``` function to normalize labels
-proc normalize(s: string): string =
-  return s
-    .replace("_","")
-    .replace(" ","")
-    .tolowerascii()
-```
+A code block is usually referenced by other code blocks, so for every named code block I need to track how many times they're referenced or invoked in other code blocks. Just in case I need to show it.
 
-``` helper function to transform names to links
-proc nameAsLink(m: RegexMatch2, s: string): string =
-  return
-    "<a href=\"#" &
-      s[m.group(1)].normalize() &
-    "\">" &
-      s[m.group(0)] &
-    "</a>"
-```
-
-A code block is usually referenced by other code blocks, so for every named code block we need to track how many times they're referenced or invoked in other code blocks.
-
-``` initialize code block references list
+```nim initialize code block references list
 for txblock in blocks:
   case txblock.kind
   of Code:
@@ -287,7 +290,9 @@ for txblock in blocks:
     discard
 ```
 
-``` count code block references
+For each block I then add 1 to the reference count of each other code block referenced within this code block. Here I can also do some checking, warning you that you might have referenced a block that doesn't even exist at all.
+
+```nim count code block references
 for txblock in blocks:
   case txblock.kind
   of Code:
@@ -305,7 +310,27 @@ for txblock in blocks:
     discard
 ```
 
-``` convert a code block into html
+#### Generating the prose block HTML
+
+Converting prose blocks to HTML is trivial: just use the `rstToHtml` function on the entire input and append it to the HTML. Although there is a bit of a quirk when the contents are not preceded with a blank line: the first paragraph will be text whereas the others would be surrounded in <p>. This can add pain to layout and styling, and so I've put a `.. raw:: html` hack to force the first paragraph to be surrounded in <p>.
+
+```nim convert a prose block into html
+let toParaHack = ".. raw:: html\n\n" & txblock.content
+generatedHtml &=
+  toParaHack.rstToHtml(
+    {
+      roSupportMarkdown, roPreferMarkdown, roSandboxDisabled,
+      roSupportRawDirective,
+    },
+    modeStyleInsensitive.newStringTable(),
+  )
+```
+
+#### Generating the code block HTML
+
+On the other hand, converting code blocks aren't so trivial. At minimum the code block needs to have escapes in order for them not to be interpreted as HTML code when I don't want it, which can lead to incorrect code displays. Then there's also the extra metadata that needs to be laid out so as to easily identify and navigate between them.
+
+```nim convert a code block into html
 # TODO: make it convert properly...
 let escapedCode =
   @{make the code block html-friendly}
@@ -327,7 +352,9 @@ generatedHtml &= (
 )
 ```
 
-``` make the code block html-friendly
+First I escape the common HTML characters, and then turn all code block references into links.
+
+```nim make the code block html-friendly
 txblock.content
   .replace("&", "&amp;")
   .replace("<", "&lt;")
@@ -335,35 +362,67 @@ txblock.content
   .replace(codeBlockRefPtn, nameAsLink)
 ```
 
-``` code block html start
+The link-replacement is done by this helper function:
+
+```nim helper function to transform names to links
+proc nameAsLink(m: RegexMatch2, s: string): string =
+  return
+    "</code><code class=\"cb-reference\"><a href=\"#" &
+      s[m.group(1)].normalize() &
+    "\">" &
+      s[m.group(0)] &
+    "</a></code><code class=\"cb-content\">"
+```
+
+Every one of these links needs to refer to valid HTML identifiers, which, to make it consistent, I'll have to make a helper function to convert from the code block's name to a weird HTML identifier.
+
+```nim function to normalize labels
+proc normalize(s: string): string =
+  return s
+    .replace("_","")
+    .replace(" ","")
+    .tolowerascii()
+```
+
+After I've converted the main content into something presentable, I can wrap it in an HTML container, having a title tab if the code block has a name, but a plain pre otherwise. In them I also add language information via a class, so that external tools or JavaScript would know what to do with them.
+
+```nim code block html start
 if txblock.name.len > 0:
   @{starting html for named code block}
 else:
   @{starting html for anonymous code block}
 ```
 
-``` starting html for named code block
-"<div class=\"code-block\" id=\"" & normName & "\">" &
+```nim starting html for named code block
+"<div class=\"code-block" & (
+    if txblock.language.strip() == "": ""
+    else: " language-" & txblock.language
+  ) & "\" id=\"" & normName & "\">" &
   "<header class=\"block-title\">" &
     "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
   "</header>" &
-  "<pre><code>" &
+  "<pre><code class=\"cb-content\">" &
     escapedCode &
   "</code></pre>"
 ```
 
-``` starting html for anonymous code block
-"<div class=\"code-block\">" &
-  "<pre><code>" &
+```nim starting html for anonymous code block
+"<div class=\"code-block" & (
+  if txblock.language.strip() == "": ""
+  else: " language-" & txblock.language
+) & "\">" &
+  "<pre><code class=\"cb-content\">" &
     escapedCode &
   "</code></pre>"
 ```
 
-``` code block html end
+```nim code block html end
 "</div>"
 ```
 
-``` generate backlinks list for html code block
+The backlinks list take advantage of the whole block reference-counting thing from earlier. It can help navigate back and forth between sections of code, answering the question of "Hmm, where is *this* used?"
+
+```nim generate backlinks list for html code block
 generatedHtml &= "<footer class=\"used-by\">Used by "
 
 for i in reflist[txblock.name].keys:
@@ -375,52 +434,51 @@ for i in reflist[txblock.name].keys:
 generatedHtml &= "</footer>"
 ```
 
-Meanwhile, prose blocks are just converted wholesale. There's a `.. raw:: html` line prepended to the content in order to make the first line a <p>, so as to make the flow consistent.
+#### Preparing the HTML output
 
-``` convert a prose block into html
-let toParaHack = ".. raw:: html\n\n" & txblock.content
-generatedHtml &=
-  toParaHack.rstToHtml(
-    {
-      roSupportMarkdown, roPreferMarkdown, roSandboxDisabled,
-      roSupportRawDirective,
-    },
-    modeStyleInsensitive.newStringTable(),
+What I have so far is the raw HTML of every block, now I just have to wrap it into a useable HTML document. And for this I'll want a template approach. The template must have both `<!-- TITLE -->` and `<!-- BODY -->` for it to be useable. If a template is not provided, it will just fall back onto a minimal, default one.
+
+```nim insert weaved into html template
+proc intoHtmlTemplate(weaved: string, inputTemplate: string = "", title: string = ""): string =
+  const defaultTemp = staticRead("default.html")
+
+  let temp = (
+    if inputTemplate.strip() == "": defaultTemp
+    else: inputTemplate
   )
+
+  # <!-- TITLE --> is replaced with the source file name.
+  # <!-- BODY --> is replaced with the body of the document.
+  # The spellings need to exact.
+
+  return temp.replace("<!-- TITLE -->", title).replace("<!-- BODY -->", weaved)
 ```
 
-``` insert weaved into html template
-proc intoHtmlTemplate(weaved: string, temp: string = "", title: string = ""): string =
-  if temp.strip() == "":
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>""" & title & """</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link rel="stylesheet" href="css/screen.css" media="screen,projection,tv">
-      <link rel="stylesheet" href="css/print.css" media="print">
-    </head>
-    <body>
-    """ & weaved & """
-    </body>
-    </html>
-    """
-  else:
-    # <!-- TITLE --> is replaced with the document title.
-    # <!-- BODY --> is replaced with the body of the document.
-    # The spellings need to exact.
-    return temp.replace("<!-- TITLE -->", title).replace("<!-- BODY -->", weaved)
+This is the default HTML template, you can find it in the source under `src/default.html`. For styling, it assumes a `css/screen.css` and `css/print.css` to be available from the point of view of the rendered HTML file.
+
+```html /src/default.html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title><!-- TITLE --></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/screen.css" media="screen,projection,tv">
+    <link rel="stylesheet" href="css/print.css" media="print">
+  </head>
+  <body>
+    <!-- BODY -->
+  </body>
+</html>
 ```
 
 #### Calling the weave command
 
-The `weave` command supports supplying a template file via the option `--template`. This is optional, as the command has a "default" template that it uses.
+From the main program entry point, the `weave` command supports supplying a template file via the option `--template`. This is optional, as the command has a "default" template that it uses.
 
-``` call weave command
+```nim call weave command
 let weaved = blocks.weave().intoHtmlTemplate(
-  temp = (
+  inputTemplate = (
     if args["--template"].kind == vkNone:
       ""
     else:
@@ -436,10 +494,14 @@ else:
 quit(0)
 ```
 
-
 ### Tangle
 
-``` tangle function
+Meanwhile, `tangle` here exports files from the literate program to make source code that can be compiled. It needs to do two things:
+
+1. Replace code block references with the actual code blocks.
+2. Save code blocks to files when it's warranted to do so.
+
+```nim tangle function
 proc tangle(blocks: seq[Block], dest: string) =
   var codeBlkMap: Table[string, string]
 
@@ -447,20 +509,35 @@ proc tangle(blocks: seq[Block], dest: string) =
 
   @{fill code block mappings}
   @{modify code block mappings with actual values}
-
-  for key in codeBlkMap.keys:
-    if key.len > 0 and key[0] == '/':
-      @{save code block to file}
+  @{save code block to files}
 ```
 
-``` save code block to file
-let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
-outFileName.parentDir.createDir()
-outFileName.open(fmWrite).write(codeBlkMap[key])
-stderr.writeLine "INFO: wrote to file " & outFileName.string
+#### Replacing code block references
+
+First I'll want to go through every code block in document order and populate the code block mappings with the contents of their respective code blocks verbatim. There's no "append" feature, but there is a "replace" feature (no special syntax required), which will warn you when you're replacing a block.
+
+```nim fill code block mappings
+for txblock in blocks:
+  case txblock.kind
+  of Code:
+    if txblock.name.len < 1: continue
+    if codeBlkMap.hasKey txblock.name:
+      stderr.writeLine "WARNING: replacing code block " & txblock.name
+    codeBlkMap[txblock.name] = txblock.content
+  of Prose:
+    discard
 ```
 
-``` helper function to replace references with content
+Then I'll go through the code block mappings again to replace the references with the actual content. Er, uh… this should probably be done recursively, but for small code stuff I think it works alright for now.
+
+```nim modify code block mappings with actual values
+for codeBlk in codeBlkMap.mvalues: # :(
+  for _ in 0 .. codeBlk.findAll(codeBlockRefSpacesPtn).len: # :(
+    codeBlk = codeBlk.replace(codeBlockRefSpacesPtn, replaceReferencesWithContent)
+```
+The references are replaced in such a way that it retains the leading spaces used for the reference in every line of the replacement. For example, if a reference `@{something}` starts with 4 spaces, the entire thing to replace it will start every line with an additional 4 spaces. I think this can help in whitespace-sensitive languages by ensuring you don't accidentally change the indentation inside of a loop or something.
+
+```nim helper function to replace references with content
 proc replaceReferencesWithContent(m: RegexMatch2, s: string): string =
   let keyName = s[m.group(1)]
 
@@ -488,32 +565,31 @@ proc replaceReferencesWithContent(m: RegexMatch2, s: string): string =
   return ""
 ```
 
-``` modify code block mappings with actual values
-for codeBlk in codeBlkMap.mvalues: # :(
-  for _ in 0 .. codeBlk.findAll(codeBlockRefSpacesPtn).len: # :(
-    codeBlk = codeBlk.replace(codeBlockRefSpacesPtn, replaceReferencesWithContent)
+#### Saving to files
+
+NailIt will only save to files code blocks which start with a `/`. The `/` here means "your current working directory or your specified user directory."
+
+```nim save code block to files
+for key in codeBlkMap.keys:
+    if key.len > 0 and key[0] == '/':
+      let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
+      outFileName.parentDir.createDir()
+      outFileName.open(fmWrite).write(codeBlkMap[key])
+      stderr.writeLine "INFO: wrote to file " & outFileName.string
 ```
 
-``` fill code block mappings
-for txblock in blocks:
-  case txblock.kind
-  of Code:
-    if txblock.name.len < 1: continue
-    if codeBlkMap.hasKey txblock.name:
-      stderr.writeLine "WARNING: replacing code block " & txblock.name
-    codeBlkMap[txblock.name] = txblock.content
-  of Prose:
-    discard
-```
+#### Calling the tangle command
 
-``` call tangle command
+```nim call tangle command
 blocks.tangle(($args["<destdir/>"]))
 quit(0)
 ```
 
 ### View Blocks
 
-``` blocks function
+This `blocks` command is really just a debugging tool. It answers the question of "What does NailIt actually see when I give it my literate program?"
+
+```nim blocks function
 proc displayBlocks(blocks: seq[Block]) =
   var num = 1
   for b in blocks:
@@ -525,7 +601,7 @@ proc displayBlocks(blocks: seq[Block]) =
       ) & $num & (
         case b.kind
         of Prose: ""
-        of Code: " \"" & b.name & "\""
+        of Code: " \"" & b.name & "\" (" & b.language & ")"
       )
     echo '-'.repeat(blockTitle.len)
     echo blockTitle
@@ -535,14 +611,17 @@ proc displayBlocks(blocks: seq[Block]) =
     echo '-'.repeat(blockTitle.len) & '\n'
 ```
 
+#### Calling the view blocks function
 
-``` call blocks command
+```nim call blocks command
 blocks.displayBlocks()
 ```
 
 ### Overall program structure
 
-``` /src/nailit.nim
+Finally, let's put this all together into the full code for the thing.
+
+```nim /src/nailit.nim
 @{imports}
 @{types}
 @{constants}
@@ -552,25 +631,27 @@ when is_main_module:
   @{main program}
 ```
 
-``` imports
+```nim imports
 import regex
 import std/[strutils, tables, strtabs, os]
 import packages/docutils/[rst, rstgen]
 import docopt
 ```
 
-``` types
+```nim types
 type
   @{block type definition}
 ```
 
-``` constants
+```nim constants
 const
   @{regex patterns}
 ```
 
-``` functions
+```nim functions
 @{function to normalize labels}
+
+@{function to determine if a regex match is empty}
 
 @{get blocks from source function}
 

@@ -12,11 +12,12 @@ type
     case kind: BlockType
     of Code:
       name: string
+      language: string
     else:
       discard
 
 const
-  codeBlockPtn = re2"^```(\s*(.+))?"
+  codeBlockPtn = re2"^```$|^```(\w+)$|^```(\w+)\s+(.+)$|^```\s+(.+)$"
   codeBlockRefPtn = re2"(@\{(.+)\})"
   codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"
 
@@ -26,12 +27,17 @@ proc normalize(s: string): string =
     .replace(" ","")
     .tolowerascii()
 
+proc isEmptyMatch(s: Slice[int]): bool {.inline.} =
+  if (s.a > s.b): return true
+  return false
+
 proc getBlocks(f: File): seq[Block] =
   proc addBlock(
       blocks: var seq[Block],
       parseAs: BlockType,
       contentBuf: string,
-      nameBuf: string = ""
+      nameBuf: string = "",
+      langBuf: string = ""
   ): void =
     case parseAs
     of Prose:
@@ -56,7 +62,8 @@ proc getBlocks(f: File): seq[Block] =
           
           contentStripped
 
-        )
+        ),
+        language: langBuf
       )
 
 
@@ -67,22 +74,29 @@ proc getBlocks(f: File): seq[Block] =
   var
     contentBuffer = ""
     nextNameBuffer = ""
+    nextLangBuffer = ""
 
   for line in lines(f):
     if (var m: RegexMatch2; line.match(codeBlockPtn, m)):
       totalBlocks.addBlock(
         (if isCodeBlock: Code else: Prose),
         contentBuffer,
-        nextNameBuffer
+        nextNameBuffer,
+        nextLangBuffer
       )
       # TODO: BUG a blank line in place of this line makes the
       # below line have incorrect indentation
       nextNameBuffer = (
-        if (m.group(1).a > -1) and (m.group(1).b > -1):
-          line[m.group(1)]
-        else:
-          ""
-        )
+        if not (m.group(2).isEmptyMatch()): line[m.group(2)].strip()
+        elif not (m.group(3).isEmptyMatch()): line[m.group(3)].strip()
+        else: ""
+      )
+
+      nextLangBuffer = (
+        if not (m.group(0).isEmptyMatch()): line[m.group(0)]
+        elif not (m.group(1).isEmptyMatch()): line[m.group(1)]
+        else: ""
+      )
 
       contentBuffer = ""
       isCodeBlock = not isCodeBlock
@@ -121,11 +135,11 @@ proc weave(blocks: seq[Block]): string =
 
   proc nameAsLink(m: RegexMatch2, s: string): string =
     return
-      "<a href=\"#" &
+      "</code><code class=\"cb-reference\"><a href=\"#" &
         s[m.group(1)].normalize() &
       "\">" &
         s[m.group(0)] &
-      "</a>"
+      "</a></code><code class=\"cb-content\">"
 
 
   # turn each block to stuff
@@ -146,17 +160,23 @@ proc weave(blocks: seq[Block]): string =
       # start writing converted code block
       generatedHtml &= (
         if txblock.name.len > 0:
-          "<div class=\"code-block\" id=\"" & normName & "\">" &
+          "<div class=\"code-block" & (
+              if txblock.language.strip() == "": ""
+              else: " language-" & txblock.language
+            ) & "\" id=\"" & normName & "\">" &
             "<header class=\"block-title\">" &
               "<a href=\"#" & normName & "\">" & txblock.name & "</a>" &
             "</header>" &
-            "<pre><code>" &
+            "<pre><code class=\"cb-content\">" &
               escapedCode &
             "</code></pre>"
       
         else:
-          "<div class=\"code-block\">" &
-            "<pre><code>" &
+          "<div class=\"code-block" & (
+            if txblock.language.strip() == "": ""
+            else: " language-" & txblock.language
+          ) & "\">" &
+            "<pre><code class=\"cb-content\">" &
               escapedCode &
             "</code></pre>"
       
@@ -247,28 +267,19 @@ proc tangle(blocks: seq[Block], dest: string) =
       stderr.writeLine "INFO: wrote to file " & outFileName.string
 
 
-proc intoHtmlTemplate(weaved: string, temp: string = "", title: string = ""): string =
-  if temp.strip() == "":
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>""" & title & """</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link rel="stylesheet" href="css/screen.css" media="screen,projection,tv">
-      <link rel="stylesheet" href="css/print.css" media="print">
-    </head>
-    <body>
-    """ & weaved & """
-    </body>
-    </html>
-    """
-  else:
-    # <!-- TITLE --> is replaced with the document title.
-    # <!-- BODY --> is replaced with the body of the document.
-    # The spellings need to exact.
-    return temp.replace("<!-- TITLE -->", title).replace("<!-- BODY -->", weaved)
+proc intoHtmlTemplate(weaved: string, inputTemplate: string = "", title: string = ""): string =
+  const defaultTemp = staticRead("default.html")
+
+  let temp = (
+    if inputTemplate.strip() == "": defaultTemp
+    else: inputTemplate
+  )
+
+  # <!-- TITLE --> is replaced with the document title.
+  # <!-- BODY --> is replaced with the body of the document.
+  # The spellings need to exact.
+
+  return temp.replace("<!-- TITLE -->", title).replace("<!-- BODY -->", weaved)
 
 proc displayBlocks(blocks: seq[Block]) =
   var num = 1
@@ -281,7 +292,7 @@ proc displayBlocks(blocks: seq[Block]) =
       ) & $num & (
         case b.kind
         of Prose: ""
-        of Code: " \"" & b.name & "\""
+        of Code: " \"" & b.name & "\" (" & b.language & ")"
       )
     echo '-'.repeat(blockTitle.len)
     echo blockTitle
@@ -310,7 +321,7 @@ when is_main_module:
   blocks = see what blocks NailIt sees.
 
   """.docopt(
-    version = "NailIt 0.1.1"
+    version = "NailIt 0.2.0"
     )
   let blocks =
     open($args["<source.md>"]).getBlocks()
@@ -318,7 +329,7 @@ when is_main_module:
   
   if args["weave"].to_bool():
     let weaved = blocks.weave().intoHtmlTemplate(
-      temp = (
+      inputTemplate = (
         if args["--template"].kind == vkNone:
           ""
         else:
