@@ -1,8 +1,8 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.2.0"
 author        = "Zumi"
-description   = "A new awesome nimble package"
+description   = "A literate programming tool."
 license       = "MIT"
 srcDir        = "src"
 bin           = @["nailit"]
@@ -12,7 +12,4 @@ bin           = @["nailit"]
 
 requires "nim >= 1.6.0"
 requires "regex"
-
-# requires "print"
-
 requires "docopt"

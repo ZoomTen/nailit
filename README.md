@@ -10,7 +10,9 @@ Also, the tool does not at the moment support appending code blocks "dynamically
 
 ## Building
 
-Requires [Nim](https://nim-lang.org/) ≥1.6.x. The standard distribution should include the `nimble` tool, use `nimble build` to make a binary.
+The repository is located at https://github.com/ZoomTen/nailit.
+
+Requires [Nim](https://nim-lang.org/) ≥1.6.x. The standard distribution should include the `nimble` tool, use `nimble build` to make a binary called `nailit`.
 
 ## Usage
 
