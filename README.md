@@ -152,18 +152,19 @@ if args["blocks"].to_bool():
 Blocks are just text with attributes that make it either "part of the explanation" or "part of the code". Prose blocks are straight-forward, containing only content. Code blocks however, have additional metadata.
 
 ```nim block type definition
-BlockType = enum
-  Prose
-  Code
+type
+  BlockType = enum
+    Prose
+    Code
 
-Block = object
-  content: string
-  case kind: BlockType
-  of Code:
-    name: string
-    language: string
-  else:
-    discard
+  Block = object
+    content: string
+    case kind: BlockType
+    of Code:
+      name: string
+      language: string
+    else:
+      discard
 ```
 
 #### Parsing blocks from the document
@@ -196,9 +197,10 @@ While parsing, the program looks for these specific patterns:
 * `codeBlockRefSpacesPtn` is like `codeBlockRefPtn`, except it grabs whatever leading spaces are in it as well.
 
 ```nim regex patterns
-codeBlockPtn = re2"^```$|^```(\w+)$|^```(\w+)\s+(.+)$|^```\s+(.+)$"
-codeBlockRefPtn = re2"(@\{(.+)\})"
-codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"
+const
+  codeBlockPtn = re2"^```$|^```(\w+)$|^```(\w+)\s+(.+)$|^```\s+(.+)$"
+  codeBlockRefPtn = re2"(@\{(.+)\})"
+  codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"
 ```
 
 The two types of blocks in the markdown document live separately and cannot be nested, i.e. no code blocks in prose blocks and vice versa, no code blocks within code blocks, etc. On every line, when one of the code block patterns are found, a switch that asks "is the current block a code block?", is toggled.
@@ -680,13 +682,11 @@ import docopt
 ```
 
 ```nim types
-type
-  @{block type definition}
+@{block type definition}
 ```
 
 ```nim constants
-const
-  @{regex patterns}
+@{regex patterns}
 ```
 
 ```nim functions

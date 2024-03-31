@@ -103,18 +103,19 @@ if args["tangle"].to_bool():
   </code><code class="cb-reference"><a href="#calltanglecommand">@{call tangle command}</a></code><code class="cb-content">
 
 if args["blocks"].to_bool():
-  </code><code class="cb-reference"><a href="#callblockscommand">@{call blocks command}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><h3 id="blocks">Blocks</h3><p>Blocks are just text with attributes that make it either &quot;part of the explanation&quot; or &quot;part of the code&quot;. Prose blocks are straight-forward, containing only content. Code blocks however, have additional metadata.</p><div class="code-block language-nim" id="blocktypedefinition"><header class="block-title"><a href="#blocktypedefinition">block type definition</a></header><pre><code class="cb-content">BlockType = enum
-  Prose
-  Code
+  </code><code class="cb-reference"><a href="#callblockscommand">@{call blocks command}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><h3 id="blocks">Blocks</h3><p>Blocks are just text with attributes that make it either &quot;part of the explanation&quot; or &quot;part of the code&quot;. Prose blocks are straight-forward, containing only content. Code blocks however, have additional metadata.</p><div class="code-block language-nim" id="blocktypedefinition"><header class="block-title"><a href="#blocktypedefinition">block type definition</a></header><pre><code class="cb-content">type
+  BlockType = enum
+    Prose
+    Code
 
-Block = object
-  content: string
-  case kind: BlockType
-  of Code:
-    name: string
-    language: string
-  else:
-    discard</code></pre><footer class="used-by">Used by <a href="#types">types</a> </footer></div><h4 id="parsing-blocks-from-the-document">Parsing blocks from the document</h4><p>Basically, parsing is done on a line-by-line basis. This function takes in a file input and spits out the list of blocks resulting from that file.</p><div class="code-block language-nim" id="getblocksfromsourcefunction"><header class="block-title"><a href="#getblocksfromsourcefunction">get blocks from source function</a></header><pre><code class="cb-content">proc getBlocks(f: File): seq[Block] =
+  Block = object
+    content: string
+    case kind: BlockType
+    of Code:
+      name: string
+      language: string
+    else:
+      discard</code></pre><footer class="used-by">Used by <a href="#types">types</a> </footer></div><h4 id="parsing-blocks-from-the-document">Parsing blocks from the document</h4><p>Basically, parsing is done on a line-by-line basis. This function takes in a file input and spits out the list of blocks resulting from that file.</p><div class="code-block language-nim" id="getblocksfromsourcefunction"><header class="block-title"><a href="#getblocksfromsourcefunction">get blocks from source function</a></header><pre><code class="cb-content">proc getBlocks(f: File): seq[Block] =
   </code><code class="cb-reference"><a href="#helperfunctiontoaddablock">@{helper function to add a block}</a></code><code class="cb-content">
 
   var
@@ -133,9 +134,10 @@ Block = object
 <ul class="simple"><li><tt class="docutils literal"><span class="pre">codeBlockPtn</span></tt> scans for the start and end of code block <em>definitions</em>, in the 4 forms described earlier in this document.</li>
 <li><tt class="docutils literal"><span class="pre">codeBlockRefPtn</span></tt> scans for code block <em>references</em>, like <tt class="docutils literal"><span class="pre">@{named block}</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">codeBlockRefSpacesPtn</span></tt> is like <tt class="docutils literal"><span class="pre">codeBlockRefPtn</span></tt>, except it grabs whatever leading spaces are in it as well.</li>
-</ul><div class="code-block language-nim" id="regexpatterns"><header class="block-title"><a href="#regexpatterns">regex patterns</a></header><pre><code class="cb-content">codeBlockPtn = re2"^```$|^```(\w+)$|^```(\w+)\s+(.+)$|^```\s+(.+)$"
-codeBlockRefPtn = re2"(@\{(.+)\})"
-codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"</code></pre><footer class="used-by">Used by <a href="#constants">constants</a> </footer></div><p>The two types of blocks in the markdown document live separately and cannot be nested, i.e. no code blocks in prose blocks and vice versa, no code blocks within code blocks, etc. On every line, when one of the code block patterns are found, a switch that asks &quot;is the current block a code block?&quot;, is toggled.</p><div class="code-block language-nim" id="parsealineandmakenewblocks"><header class="block-title"><a href="#parsealineandmakenewblocks">parse a line and make new blocks</a></header><pre><code class="cb-content">if (var m: RegexMatch2; line.match(codeBlockPtn, m)):
+</ul><div class="code-block language-nim" id="regexpatterns"><header class="block-title"><a href="#regexpatterns">regex patterns</a></header><pre><code class="cb-content">const
+  codeBlockPtn = re2"^```$|^```(\w+)$|^```(\w+)\s+(.+)$|^```\s+(.+)$"
+  codeBlockRefPtn = re2"(@\{(.+)\})"
+  codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"</code></pre><footer class="used-by">Used by <a href="#constants">constants</a> </footer></div><p>The two types of blocks in the markdown document live separately and cannot be nested, i.e. no code blocks in prose blocks and vice versa, no code blocks within code blocks, etc. On every line, when one of the code block patterns are found, a switch that asks &quot;is the current block a code block?&quot;, is toggled.</p><div class="code-block language-nim" id="parsealineandmakenewblocks"><header class="block-title"><a href="#parsealineandmakenewblocks">parse a line and make new blocks</a></header><pre><code class="cb-content">if (var m: RegexMatch2; line.match(codeBlockPtn, m)):
   totalBlocks.addBlock(
     (if isCodeBlock: Code else: Prose),
     contentBuffer,
@@ -405,9 +407,7 @@ when is_main_module:
   </code><code class="cb-reference"><a href="#mainprogram">@{main program}</a></code><code class="cb-content"></code></pre></div><div class="code-block language-nim" id="imports"><header class="block-title"><a href="#imports">imports</a></header><pre><code class="cb-content">import regex
 import std/[strutils, tables, strtabs, os]
 import packages/docutils/[rst, rstgen]
-import docopt</code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block language-nim" id="types"><header class="block-title"><a href="#types">types</a></header><pre><code class="cb-content">type
-  </code><code class="cb-reference"><a href="#blocktypedefinition">@{block type definition}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block language-nim" id="constants"><header class="block-title"><a href="#constants">constants</a></header><pre><code class="cb-content">const
-  </code><code class="cb-reference"><a href="#regexpatterns">@{regex patterns}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block language-nim" id="functions"><header class="block-title"><a href="#functions">functions</a></header><pre><code class="cb-content"></code><code class="cb-reference"><a href="#functiontonormalizelabels">@{function to normalize labels}</a></code><code class="cb-content">
+import docopt</code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block language-nim" id="types"><header class="block-title"><a href="#types">types</a></header><pre><code class="cb-content"></code><code class="cb-reference"><a href="#blocktypedefinition">@{block type definition}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block language-nim" id="constants"><header class="block-title"><a href="#constants">constants</a></header><pre><code class="cb-content"></code><code class="cb-reference"><a href="#regexpatterns">@{regex patterns}</a></code><code class="cb-content"></code></pre><footer class="used-by">Used by <a href="#/src/nailit.nim">/src/nailit.nim</a> </footer></div><div class="code-block language-nim" id="functions"><header class="block-title"><a href="#functions">functions</a></header><pre><code class="cb-content"></code><code class="cb-reference"><a href="#functiontonormalizelabels">@{function to normalize labels}</a></code><code class="cb-content">
 
 </code><code class="cb-reference"><a href="#functiontodetermineifaregexmatchisempty">@{function to determine if a regex match is empty}</a></code><code class="cb-content">
 

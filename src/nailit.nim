@@ -6,7 +6,7 @@ type
   BlockType = enum
     Prose
     Code
-  
+
   Block = object
     content: string
     case kind: BlockType
@@ -15,12 +15,10 @@ type
       language: string
     else:
       discard
-
 const
   codeBlockPtn = re2"^```$|^```(\w+)$|^```(\w+)\s+(.+)$|^```\s+(.+)$"
   codeBlockRefPtn = re2"(@\{(.+)\})"
   codeBlockRefSpacesPtn = re2"(?m)^(\s*?)@\{(.+?)\}"
-
 proc normalize(s: string): string =
   return s
     .replace("_","")
