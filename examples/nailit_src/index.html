@@ -192,7 +192,22 @@ else:
   if contentStripped[^1] == '\n':
     contentStripped = contentStripped[0 ..^ 2]
 
-contentStripped</code></pre><footer class="used-by">Used by <a href="#helperfunctiontoaddablock">helper function to add a block</a> </footer></div><h3 id="weave">Weave</h3><p>The <tt class="docutils literal"><span class="pre">weave</span></tt> command compiles an HTML page from a literate program.</p><div class="code-block language-nim" id="weavefunction"><header class="block-title"><a href="#weavefunction">weave function</a></header><pre><code class="cb-content">proc weave(blocks: seq[Block]): string =
+contentStripped</code></pre><footer class="used-by">Used by <a href="#helperfunctiontoaddablock">helper function to add a block</a> </footer></div><h3 id="weave">Weave</h3><p>The <tt class="docutils literal"><span class="pre">weave</span></tt> command compiles an HTML page from a literate program.</p>
+<p>First, the blocks are transformed into an HTML string of the entire contents using the <a class="reference external" href="#weavefunction">weave</a> function. Then, it is inserted into an HTML template using <a class="reference external" href="#insertweavedintohtmltemplate">intoHtmlTemplate</a>. This template is set via the option <tt class="docutils literal"><span class="pre">--template</span></tt>—although optional, as the command has a &quot;default&quot; template that it uses. If an output file (2nd argument) is not provided, the output will simply be in <tt class="docutils literal"><span class="pre">stdout</span></tt>.</p><div class="code-block language-nim" id="callweavecommand"><header class="block-title"><a href="#callweavecommand">call weave command</a></header><pre><code class="cb-content">let weaved = blocks.weave().intoHtmlTemplate(
+  inputTemplate = (
+    if args["--template"].kind == vkNone:
+      ""
+    else:
+      open($args["--template"]).readAll()
+  ),
+  title = $args["&lt;source.md&gt;"], # TODO
+)
+
+if args["&lt;out.html&gt;"].kind == vkNone:
+  echo weaved
+else:
+  open($args["&lt;out.html&gt;"], fmWrite).write(weaved)
+quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h4 id="the-weave-function">The weave function</h4><p>Here's the function that turns the list of blocks processed earlier into an HTML string.</p><div class="code-block language-nim" id="weavefunction"><header class="block-title"><a href="#weavefunction">weave function</a></header><pre><code class="cb-content">proc weave(blocks: seq[Block]): string =
   var reflist: Table[string, CountTable[string]]
   var generatedHtml = ""
 
@@ -316,21 +331,8 @@ generatedHtml &amp;= "&lt;/footer&gt;"</code></pre><footer class="used-by">Used 
   &lt;body&gt;
     &lt;!-- BODY --&gt;
   &lt;/body&gt;
-&lt;/html&gt;</code></pre></div><h4 id="calling-the-weave-command">Calling the weave command</h4><p>From the main program entry point, the <tt class="docutils literal"><span class="pre">weave</span></tt> command supports supplying a template file via the option <tt class="docutils literal"><span class="pre">--template</span></tt>. This is optional, as the command has a &quot;default&quot; template that it uses.</p><div class="code-block language-nim" id="callweavecommand"><header class="block-title"><a href="#callweavecommand">call weave command</a></header><pre><code class="cb-content">let weaved = blocks.weave().intoHtmlTemplate(
-  inputTemplate = (
-    if args["--template"].kind == vkNone:
-      ""
-    else:
-      open($args["--template"]).readAll()
-  ),
-  title = $args["&lt;source.md&gt;"], # TODO
-)
-
-if args["&lt;out.html&gt;"].kind == vkNone:
-  echo weaved
-else:
-  open($args["&lt;out.html&gt;"], fmWrite).write(weaved)
-quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h3 id="tangle">Tangle</h3><p>Meanwhile, <tt class="docutils literal"><span class="pre">tangle</span></tt> here exports files from the literate program to make source code that can be compiled. It needs to do two things:</p>
+&lt;/html&gt;</code></pre></div><h3 id="tangle">Tangle</h3><p>Meanwhile, <tt class="docutils literal"><span class="pre">tangle</span></tt> here exports files from the literate program to make source code that can be compiled.</p><div class="code-block language-nim" id="calltanglecommand"><header class="block-title"><a href="#calltanglecommand">call tangle command</a></header><pre><code class="cb-content">blocks.tangle(($args["&lt;destdir/&gt;"]))
+quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h4 id="the-tangle-function">The tangle function</h4><p>This tangle function needs to do two things:</p>
 <ol class="simple"><li>Replace code block references with the actual code blocks.</li>
 <li>Save code blocks to files when it's warranted to do so.</li>
 </ol><div class="code-block language-nim" id="tanglefunction"><header class="block-title"><a href="#tanglefunction">tangle function</a></header><pre><code class="cb-content">proc tangle(blocks: seq[Block], dest: string) =
@@ -379,8 +381,7 @@ quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main 
     let outFileName = [dest, key[1 ..^ 1]].join($os.DirSep)
     outFileName.parentDir.createDir()
     outFileName.open(fmWrite).write(codeBlkMap[key])
-    stderr.writeLine "INFO: wrote to file " &amp; outFileName.string</code></pre><footer class="used-by">Used by <a href="#tanglefunction">tangle function</a> </footer></div><h4 id="calling-the-tangle-command">Calling the tangle command</h4><div class="code-block language-nim" id="calltanglecommand"><header class="block-title"><a href="#calltanglecommand">call tangle command</a></header><pre><code class="cb-content">blocks.tangle(($args["&lt;destdir/&gt;"]))
-quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h3 id="view-blocks">View Blocks</h3><p>This <tt class="docutils literal"><span class="pre">blocks</span></tt> command is really just a debugging tool. It answers the question of &quot;What does NailIt actually see when I give it my literate program?&quot;</p><div class="code-block language-nim" id="blocksfunction"><header class="block-title"><a href="#blocksfunction">blocks function</a></header><pre><code class="cb-content">proc displayBlocks(blocks: seq[Block]) =
+    stderr.writeLine "INFO: wrote to file " &amp; outFileName.string</code></pre><footer class="used-by">Used by <a href="#tanglefunction">tangle function</a> </footer></div><h3 id="view-blocks">View Blocks</h3><p>This <tt class="docutils literal"><span class="pre">blocks</span></tt> command is really just a debugging tool. It answers the question of &quot;What does NailIt actually see when I give it my literate program?&quot;</p><div class="code-block language-nim" id="callblockscommand"><header class="block-title"><a href="#callblockscommand">call blocks command</a></header><pre><code class="cb-content">blocks.displayBlocks()</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><div class="code-block language-nim" id="blocksfunction"><header class="block-title"><a href="#blocksfunction">blocks function</a></header><pre><code class="cb-content">proc displayBlocks(blocks: seq[Block]) =
   var num = 1
   for b in blocks:
     let blockTitle =
@@ -398,7 +399,7 @@ quit(0)</code></pre><footer class="used-by">Used by <a href="#mainprogram">main 
     echo '-'.repeat(blockTitle.len)
     num += 1
     echo b.content
-    echo '-'.repeat(blockTitle.len) &amp; '\n'</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><h4 id="calling-the-view-blocks-function">Calling the view blocks function</h4><div class="code-block language-nim" id="callblockscommand"><header class="block-title"><a href="#callblockscommand">call blocks command</a></header><pre><code class="cb-content">blocks.displayBlocks()</code></pre><footer class="used-by">Used by <a href="#mainprogram">main program</a> </footer></div><h3 id="overall-program-structure">Overall program structure</h3><p>Finally, let's put this all together into the full code for the thing.</p><div class="code-block language-nim" id="/src/nailit.nim"><header class="block-title"><a href="#/src/nailit.nim">/src/nailit.nim</a></header><pre><code class="cb-content"></code><code class="cb-reference"><a href="#imports">@{imports}</a></code><code class="cb-content">
+    echo '-'.repeat(blockTitle.len) &amp; '\n'</code></pre><footer class="used-by">Used by <a href="#functions">functions</a> </footer></div><h3 id="overall-program-structure">Overall program structure</h3><p>Finally, let's put this all together into the full code for the thing.</p><div class="code-block language-nim" id="/src/nailit.nim"><header class="block-title"><a href="#/src/nailit.nim">/src/nailit.nim</a></header><pre><code class="cb-content"></code><code class="cb-reference"><a href="#imports">@{imports}</a></code><code class="cb-content">
 </code><code class="cb-reference"><a href="#types">@{types}</a></code><code class="cb-content">
 </code><code class="cb-reference"><a href="#constants">@{constants}</a></code><code class="cb-content">
 </code><code class="cb-reference"><a href="#functions">@{functions}</a></code><code class="cb-content">

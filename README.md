@@ -301,6 +301,30 @@ contentStripped
 
 The `weave` command compiles an HTML page from a literate program.
 
+First, the blocks are transformed into an HTML string of the entire contents using the [weave](#weavefunction) function. Then, it is inserted into an HTML template using [intoHtmlTemplate](#insertweavedintohtmltemplate). This template is set via the option `--template`—although optional, as the command has a "default" template that it uses. If an output file (2nd argument) is not provided, the output will simply be in `stdout`.
+
+```nim call weave command
+let weaved = blocks.weave().intoHtmlTemplate(
+  inputTemplate = (
+    if args["--template"].kind == vkNone:
+      ""
+    else:
+      open($args["--template"]).readAll()
+  ),
+  title = $args["<source.md>"], # TODO
+)
+
+if args["<out.html>"].kind == vkNone:
+  echo weaved
+else:
+  open($args["<out.html>"], fmWrite).write(weaved)
+quit(0)
+```
+
+#### The weave function
+
+Here's the function that turns the list of blocks processed earlier into an HTML string.
+
 ```nim weave function
 proc weave(blocks: seq[Block]): string =
   var reflist: Table[string, CountTable[string]]
@@ -515,31 +539,19 @@ This is the default HTML template, you can find it in the source under `src/defa
 </html>
 ```
 
-#### Calling the weave command
+### Tangle
 
-From the main program entry point, the `weave` command supports supplying a template file via the option `--template`. This is optional, as the command has a "default" template that it uses.
+Meanwhile, `tangle` here exports files from the literate program to make source code that can be compiled.
 
-```nim call weave command
-let weaved = blocks.weave().intoHtmlTemplate(
-  inputTemplate = (
-    if args["--template"].kind == vkNone:
-      ""
-    else:
-      open($args["--template"]).readAll()
-  ),
-  title = $args["<source.md>"], # TODO
-)
 
-if args["<out.html>"].kind == vkNone:
-  echo weaved
-else:
-  open($args["<out.html>"], fmWrite).write(weaved)
+```nim call tangle command
+blocks.tangle(($args["<destdir/>"]))
 quit(0)
 ```
 
-### Tangle
+#### The tangle function
 
-Meanwhile, `tangle` here exports files from the literate program to make source code that can be compiled. It needs to do two things:
+This tangle function needs to do two things:
 
 1. Replace code block references with the actual code blocks.
 2. Save code blocks to files when it's warranted to do so.
@@ -621,16 +633,13 @@ for key in codeBlkMap.keys:
     stderr.writeLine "INFO: wrote to file " & outFileName.string
 ```
 
-#### Calling the tangle command
-
-```nim call tangle command
-blocks.tangle(($args["<destdir/>"]))
-quit(0)
-```
-
 ### View Blocks
 
 This `blocks` command is really just a debugging tool. It answers the question of "What does NailIt actually see when I give it my literate program?"
+
+```nim call blocks command
+blocks.displayBlocks()
+```
 
 ```nim blocks function
 proc displayBlocks(blocks: seq[Block]) =
@@ -652,12 +661,6 @@ proc displayBlocks(blocks: seq[Block]) =
     num += 1
     echo b.content
     echo '-'.repeat(blockTitle.len) & '\n'
-```
-
-#### Calling the view blocks function
-
-```nim call blocks command
-blocks.displayBlocks()
 ```
 
 ### Overall program structure
